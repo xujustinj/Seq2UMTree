@@ -1,29 +1,19 @@
 # https://github.com/nusnlp/PtrNetDecoding4JERE
-import sys
-import os
-import numpy as np
-import random
-
-import pickle
-import datetime
-
-from collections import OrderedDict
-from tqdm import tqdm
-from recordclass import recordclass
-from typing import Dict, List, Tuple, Set, Optional
 from functools import partial
+import json
+import os
+import random
+from typing import Dict, List
+
+import numpy as np
+from recordclass import recordclass
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
 from openjere.config.const import *
-
-import math
-import torch
-import torch.autograd as autograd
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import json
 
 
 # enc_type = ['LSTM', 'GCN', 'LSTM-GCN'][0]

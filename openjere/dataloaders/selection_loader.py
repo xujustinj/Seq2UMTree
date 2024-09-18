@@ -4,15 +4,12 @@ import json
 import torch
 
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data import Dataset
-
-from torch.nn.utils.rnn import pad_sequence
 
 from functools import partial
-from typing import Dict, List, Tuple, Set, Optional
+from typing import List
 
 from .abc_dataset import Abstract_dataset
-from openjere.config import EOS, PAD, SOS, OOV, NO_RELATION
+from openjere.config import PAD, OOV, NO_RELATION
 
 
 class Selection_Dataset(Abstract_dataset):
@@ -66,7 +63,7 @@ class Selection_Dataset(Abstract_dataset):
     def __len__(self):
         return len(self.text_list)
 
-    def text2tensor(self, text: List[str]) -> torch.tensor:
+    def text2tensor(self, text: List[str]) -> torch.Tensor:
         oov = self.word_vocab[OOV]
         padded_list = list(map(lambda x: self.word_vocab.get(x, oov), text))
         padded_list.extend(

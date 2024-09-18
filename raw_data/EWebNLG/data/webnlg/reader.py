@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-from itertools import chain
 from os import listdir, path
 from os.path import isdir
 from collections import defaultdict
@@ -271,7 +270,7 @@ class RDFFileReader:
         assert set(tag2tri_ent.values()) == triple_entities
 
         """
-        TODO: 
+        TODO:
         Erroraneous case:
         train.csv:7123:"Ayam penyet	mainIngredients	Squeezed"" or ""smashed"" fried chicken served with sambal",PATIENT_2 is PATIENT_3 .,"Fried chicken is Squeezed"" or ""smashed"" fried chicken served with sambal .",The chicken is smashed and served hot with sambal .,"Ayam penyet	Fried chicken	Squeezed"" or ""smashed"" fried chicken served with sambal",AGENT_1 PATIENT_2 PATIENT_3,ROOT	mainIngredients	mainIngredients_inv,mainIngredients,"[0, 2]","[2, 2, 8]","{""AGENT_1"": ""Ayam penyet"", ""PATIENT_2"": ""Fried chicken"", ""PATIENT_3"": ""Squeezed\"" or \""smashed\"" fried chicken served with sambal""}","[[0, 4], [4, 2], [2, 5], [5, 0]]","Ayam penyet <ENT_SEP> Fried chicken <ENT_SEP> Squeezed"" or ""smashed"" fried chicken served with sambal <ENT_REL_SEP> mainIngredients <REL_TRP_SEP> 0 2 0","Ayam penyet	mainIngredients	Squeezed"" or ""smashed"" fried chicken served with sambal <ENT_TGT_SEP> PATIENT_2 is PATIENT_3 . <TGT_TXT_SEP> The chicken is smashed and served hot with sambal ."
         train.csv:7359:Bakewell tart	ingredient	Frangipane,AGENT_1 contains PATIENT_3 .,Bakewell pudding contains Frangipane .,It contains frangipane .,Bakewell pudding	Bakewell tart	Frangipane,AGENT_1 BRIDGE_2 PATIENT_3,ROOT	ingredient	ingredient_inv,ingredient,"[1, 2]","[2, 2, 1]","{""AGENT_1"": ""Bakewell pudding"", ""BRIDGE_2"": ""Bakewell tart"", ""PATIENT_3"": ""Frangipane""}","[[1, 4], [4, 2], [2, 5], [5, 1]]",Bakewell pudding <ENT_SEP> Bakewell tart <ENT_SEP> Frangipane <ENT_REL_SEP> ingredient <REL_TRP_SEP> 1 2 0,Bakewell tart	ingredient	Frangipane <ENT_TGT_SEP> AGENT_1 contains PATIENT_3 . <TGT_TXT_SEP> It contains frangipane .

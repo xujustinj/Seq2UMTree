@@ -1,14 +1,9 @@
 import os
 import json
 
-import torch
-
 from torch.utils.data import Dataset
 
-from functools import partial
-from typing import Dict, List, Tuple, Set, Optional
-
-from abc import ABC, abstractmethod, abstractstaticmethod
+from abc import ABC, abstractmethod
 
 
 class Abstract_dataset(ABC, Dataset):

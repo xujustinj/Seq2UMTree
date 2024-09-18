@@ -1,7 +1,5 @@
 import json
-import os
 import random
-from typing import Dict, List, Tuple, Set, Optional
 
 
 def yield_line(source: str):

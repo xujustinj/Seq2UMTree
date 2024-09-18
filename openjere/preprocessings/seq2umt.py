@@ -1,15 +1,10 @@
 import os
 import json
-import numpy as np
+from typing import Dict, List, Tuple, Optional
 
-from collections import Counter
-from typing import Dict, List, Tuple, Set, Optional
 from overrides import overrides
 
-from cached_property import cached_property
-
 from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
-from openjere.config.const import find
 
 
 class Seq2umt_preprocessing(ABC_data_preprocessing):
@@ -87,10 +82,10 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
         subj: multi-label classification of subject
 
         obj: multi-label classification of object
-        
+
         Arguments:
             spo_list {List[Dict[str, str]]} -- [description]
-        
+
         Returns:
             List[Tuple[str]] -- [(r, s, rel, subj, obj)]
         """

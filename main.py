@@ -1,35 +1,21 @@
-import os
-import json
-import time
 import argparse
-import random
+from collections import Counter
 import logging
+import os
+from typing import Dict, List
 
-import torch
 import numpy as np
-
-from typing import Dict, List, Tuple, Set, Optional
+import torch
+from torch.optim.adam import Adam
+from torch.optim.sgd import SGD
+from tqdm import tqdm
 
 # from torchsummary import summary
 # from prefetch_generator import BackgroundGenerator
 BackgroundGenerator = lambda x: x
 # print = logging.info
 
-
-from tqdm import tqdm
-
-from collections import Counter
-
-from torch.optim import Adam, SGD
-
-from openjere.preprocessings import (
-    Selection_preprocessing,
-    Twotagging_preprocessing,
-    Seq2umt_preprocessing,
-    WDec_preprocessing,
-    Copymtl_preprocessing,
-)
-
+from openjere.config import Hyper
 from openjere.dataloaders import (
     Selection_Dataset,
     Selection_loader,
@@ -42,7 +28,6 @@ from openjere.dataloaders import (
     Copymtl_Dataset,
     Copymtl_loader,
 )
-from openjere.metrics import F1_triplet
 from openjere.models import (
     MultiHeadSelection,
     Twotagging,
@@ -50,7 +35,13 @@ from openjere.models import (
     WDec,
     CopyMTL,
 )
-from openjere.config import Hyper
+from openjere.preprocessings import (
+    Selection_preprocessing,
+    Twotagging_preprocessing,
+    Seq2umt_preprocessing,
+    WDec_preprocessing,
+    Copymtl_preprocessing,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

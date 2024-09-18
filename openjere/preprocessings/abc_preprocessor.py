@@ -1,12 +1,10 @@
-import os
-import json
-import numpy as np
-
-from collections import Counter
-from typing import Dict, List, Tuple, Set, Optional
 from abc import ABC, abstractmethod
+from collections import Counter
+from functools import cached_property
+import json
+import os
+from typing import Dict, List, Optional
 
-from cached_property import cached_property
 from openjere.config.const import (
     PAD,
     OOV,

@@ -1,15 +1,14 @@
+import copy
+from functools import partial
+import json
+import os
+from typing import Dict, List
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import json
-import os
-import copy
-
-from typing import Dict, List, Tuple, Set, Optional
-from functools import partial
-
-from openjere.config import EOS, PAD, SOS, OOV, NO_RELATION
+from openjere.config import PAD, NO_RELATION
 from openjere.layer.crf import CRF
 from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel

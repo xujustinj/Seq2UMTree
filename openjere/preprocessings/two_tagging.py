@@ -1,14 +1,9 @@
 #! -*- coding:utf-8 -*-
 
-import os
 import json
-import numpy as np
+from typing import Dict, List, Optional
 
-from collections import Counter
-from typing import Dict, List, Tuple, Set, Optional
 from overrides import overrides
-
-from cached_property import cached_property
 
 from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 

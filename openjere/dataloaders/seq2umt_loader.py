@@ -1,26 +1,15 @@
 #! -*- coding:utf-8 -*-
 
+from functools import partial
 import json
-import numpy as np
-from random import choice
-
 import os
-import torch.utils.data as Data
-import torch.nn.functional as F
-
 import time
 
 # torch.backends.cudnn.benchmark = True
 
+import numpy as np
 import torch
-
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data import Dataset
-
-from torch.nn.utils.rnn import pad_sequence
-
-from functools import partial
-from typing import Dict, List, Tuple, Set, Optional
 
 from .abc_dataset import Abstract_dataset
 

@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Set, Optional
+from typing import Dict, List
 
 
 class F1_triplet(object):

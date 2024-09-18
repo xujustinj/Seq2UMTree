@@ -1,6 +1,7 @@
 import time
+from typing import List
+
 import torch
-from typing import Dict, List, Tuple, Set, Optional
 
 PAD = "<pad>"
 OOV = "<oov>"

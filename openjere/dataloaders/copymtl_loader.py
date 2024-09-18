@@ -1,18 +1,13 @@
-import os
+from functools import partial
 import json
+import os
+from typing import List
 
 import torch
-
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data import Dataset
 
-from torch.nn.utils.rnn import pad_sequence
-
-from functools import partial
-from typing import Dict, List, Tuple, Set, Optional
-
+from openjere.config import NO_RELATION
 from .abc_dataset import Abstract_dataset
-from openjere.config import SEP_SEMICOLON, SEP_VERTICAL_BAR, EOS, PAD, SOS, NO_RELATION
 
 
 class Copymtl_Dataset(Abstract_dataset):
@@ -50,7 +45,7 @@ class Copymtl_Dataset(Abstract_dataset):
     def __len__(self):
         return len(self.text_list)
 
-    def text2tensor(self, text: List[str]) -> torch.tensor:
+    def text2tensor(self, text: List[str]) -> torch.Tensor:
         oov = self.word_vocab["<oov>"]
         padded_list = list(map(lambda x: self.word_vocab.get(x, oov), text))
         padded_list.extend(

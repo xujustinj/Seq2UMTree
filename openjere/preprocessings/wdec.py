@@ -1,16 +1,12 @@
 import os
 import json
-import numpy as np
 import random
+from typing import Dict, List, Optional
 
-from collections import Counter
-from typing import Dict, List, Tuple, Set, Optional
-
-from cached_property import cached_property
 from overrides import overrides
 
-from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 from openjere.config import SEP_SEMICOLON, SEP_VERTICAL_BAR, EOS, PAD, SOS, NO_RELATION
+from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 
 
 class WDec_preprocessing(ABC_data_preprocessing):

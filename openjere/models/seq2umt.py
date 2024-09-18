@@ -1,20 +1,16 @@
+from functools import partial
+import json
+import os
+from typing import Dict, List
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
-import json
-import os
-import copy
-
-from typing import Dict, List, Tuple, Set, Optional
-from functools import partial
-
-from openjere.metrics import F1_op, F1_os, F1_ps, F1_triplet
-from openjere.models.abc_model import ABCModel
-
-from openjere.layer import Attention, MaskedBCE
 from openjere.config import seq_max_pool, seq_and_vec, seq_gather
+from openjere.layer import Attention, MaskedBCE
+from openjere.metrics import F1_triplet
+from openjere.models.abc_model import ABCModel
 
 activation = F.gelu
 

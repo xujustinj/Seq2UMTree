@@ -1,15 +1,10 @@
-import os
 import json
-import numpy as np
+from typing import Dict, List, Optional
 
-from collections import Counter
-from typing import Dict, List, Tuple, Set, Optional
-
-from cached_property import cached_property
 from overrides import overrides
 
+from openjere.config.const import find
 from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
-from openjere.config.const import find, NO_RELATION
 
 
 class Copymtl_preprocessing(ABC_data_preprocessing):

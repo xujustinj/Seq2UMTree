@@ -1,10 +1,13 @@
-from recordclass import recordclass
-from torch.utils.data.dataloader import DataLoader
-from torch.utils.data import Dataset
 from functools import partial
-from typing import Dict, List, Tuple, Set, Optional
+import json
+import os
+import random
+from typing import List
 
-from .abc_dataset import Abstract_dataset
+from recordclass import recordclass
+import torch
+from torch.utils.data.dataloader import DataLoader
+
 from openjere.config.const import (
     seq_padding,
     OOV,
@@ -13,14 +16,9 @@ from openjere.config.const import (
     SEP_SEMICOLON,
     SEP_VERTICAL_BAR,
 )
+from .abc_dataset import Abstract_dataset
 
 
-import numpy as np
-import os
-import json
-import random
-
-import torch
 
 Sample = recordclass("Sample", "Id SrcLen SrcWords TrgLen TrgWords AdjMat")
 
@@ -85,7 +83,7 @@ class WDec_Dataset(Abstract_dataset):
     def __len__(self):
         return len(self.text_list)
 
-    def text2id(self, text: List[str]) -> torch.tensor:
+    def text2id(self, text: List[str]) -> torch.Tensor:
         oov = self.word_vocab[OOV]
         text_list = list(
             map(lambda x: self.word_vocab.get(x, oov), self.tokenizer(text))

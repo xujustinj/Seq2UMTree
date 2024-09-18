@@ -1,8 +1,8 @@
+from dataclasses import dataclass
 import json
 import os
-from typing import Optional, List
-from dataclasses import dataclass
 
+from typing import Optional, List
 
 @dataclass
 class Hyper(object):

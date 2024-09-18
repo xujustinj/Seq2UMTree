@@ -1,9 +1,6 @@
-from typing import Dict, List, Tuple, Set, Optional
-from abc import ABC, abstractmethod, abstractstaticmethod
+from abc import ABC, abstractmethod
+
 from torch import nn
-
-import torch
-
 from transformers import AutoConfig, AutoModel, AutoTokenizer
 
 class ABCModel(ABC, nn.Module):
@@ -11,7 +8,8 @@ class ABCModel(ABC, nn.Module):
     def run_metrics(self, output):
         pass
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def description(epoch, epoch_num, output):
         pass
 

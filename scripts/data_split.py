@@ -1,8 +1,7 @@
+import json
 import os
 import random
-import json
-
-from typing import Dict, List, Tuple, Set, Optional
+from typing import Tuple
 
 CHINESE = "raw_data/chinese"
 WEBNLG = "raw_data/EWebNLG"

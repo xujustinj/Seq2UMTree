@@ -1,19 +1,16 @@
 # https://github.com/zhengyima/kg-baseline-pytorch/tree/master
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-
+from functools import partial
 import json
 import os
-import copy
+from typing import Dict, List
 
-from typing import Dict, List, Tuple, Set, Optional
-from functools import partial
+import numpy as np
+import torch
+import torch.nn as nn
 
+from openjere.config import seq_max_pool, seq_and_vec, seq_gather
 from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
-from openjere.config import seq_max_pool, seq_and_vec, seq_gather
 
 
 class Twotagging(ABCModel):
