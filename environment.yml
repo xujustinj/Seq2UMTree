@@ -1,0 +1,15 @@
+name: OpenJERE
+channels:
+  - cerebis
+  - pytorch
+  - anaconda
+  - conda-forge
+dependencies:
+  - python=3.8
+  - matplotlib-base
+  - numpy
+  - overrides
+  - pytorch=*=*cuda*
+  - recordclass
+  - tqdm
+  - transformers
