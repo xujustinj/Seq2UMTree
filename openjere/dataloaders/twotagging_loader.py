@@ -11,7 +11,7 @@ import torch
 from torch.utils.data.dataloader import DataLoader
 # torch.backends.cudnn.benchmark = True
 
-from .abc_dataset import Abstract_dataset
+from .abc_dataset import Abstract_dataset, PartialDataLoader
 
 
 def get_now_time():
@@ -162,8 +162,4 @@ class Batch_reader(object):
         return self
 
 
-def collate_fn(batch):
-    return Batch_reader(batch)
-
-
-Twotagging_loader = partial(DataLoader, collate_fn=collate_fn, pin_memory=True)
+Twotagging_loader = PartialDataLoader(Batch_reader)

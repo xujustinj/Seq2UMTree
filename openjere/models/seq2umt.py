@@ -9,7 +9,6 @@ import torch.nn.functional as F
 
 from openjere.config import seq_max_pool, seq_and_vec, seq_gather
 from openjere.layer import Attention, MaskedBCE
-from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
 
 activation = F.gelu
@@ -29,10 +28,7 @@ class Seq2umt(ABCModel):
 
         self.mBCE = MaskedBCE()
         self.BCE = torch.nn.BCEWithLogitsLoss()
-        self.metrics = F1_triplet()
-        # self.metrics = F1_()
 
-        self.get_metric = self.metrics.get_metric
         self.encoder = Encoder(
             len(self.word_vocab), self.hyper.emb_size, self.hyper.hidden_size
         )

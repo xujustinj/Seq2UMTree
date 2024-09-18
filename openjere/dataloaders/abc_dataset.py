@@ -1,9 +1,9 @@
-import os
-import json
-
-from torch.utils.data import Dataset
-
 from abc import ABC, abstractmethod
+import json
+import os
+from typing import Any, Callable, Optional, Protocol
+
+from torch.utils.data import Dataset, DataLoader
 
 
 class Abstract_dataset(ABC, Dataset):
@@ -34,3 +34,21 @@ class Abstract_dataset(ABC, Dataset):
     @abstractmethod
     def __len__(self):
         pass
+
+class PartialDataLoader:
+    def __init__(self, batch_reader: Callable[[Any], object]):
+        self._batch_reader = batch_reader
+
+    def __call__(
+            self,
+            dataset: Abstract_dataset,
+            batch_size: Optional[int] = 1,
+            num_workers: int = 0,
+    ) -> DataLoader:
+        return DataLoader(
+            dataset=dataset,
+            collate_fn=(lambda x: self._batch_reader(x)),
+            batch_size=batch_size,
+            num_workers=num_workers,
+            pin_memory=True,
+        )

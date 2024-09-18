@@ -8,7 +8,7 @@ from torch.utils.data.dataloader import DataLoader
 from functools import partial
 from typing import List
 
-from .abc_dataset import Abstract_dataset
+from .abc_dataset import Abstract_dataset, PartialDataLoader
 from openjere.config import PAD, OOV, NO_RELATION
 
 
@@ -121,8 +121,4 @@ class Batch_reader(object):
         return self
 
 
-def collate_fn(batch):
-    return Batch_reader(batch)
-
-
-Selection_loader = partial(DataLoader, collate_fn=collate_fn, pin_memory=True)
+Selection_loader = PartialDataLoader(Batch_reader)

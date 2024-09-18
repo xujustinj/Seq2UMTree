@@ -7,7 +7,7 @@ import torch
 from torch.utils.data.dataloader import DataLoader
 
 from openjere.config import NO_RELATION
-from .abc_dataset import Abstract_dataset
+from .abc_dataset import Abstract_dataset, PartialDataLoader
 
 
 class Copymtl_Dataset(Abstract_dataset):
@@ -102,8 +102,4 @@ class Batch_reader(object):
         return self
 
 
-def collate_fn(batch):
-    return Batch_reader(batch)
-
-
-Copymtl_loader = partial(DataLoader, collate_fn=collate_fn, pin_memory=True)
+Copymtl_loader = PartialDataLoader(Batch_reader)

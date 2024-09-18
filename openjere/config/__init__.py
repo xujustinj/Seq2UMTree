@@ -1,2 +1,2 @@
-from openjere.config.hyper import *
+from openjere.config.hyper import Hyper, ModelName, OptimizerName
 from openjere.config.const import *

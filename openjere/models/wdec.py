@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
 from openjere.config.const import *
 
@@ -247,8 +246,6 @@ class WDec(ABCModel):
             len(self.word_vocab),
         )
         self.criterion = nn.NLLLoss(ignore_index=0)
-        self.metrics = F1_triplet()
-        self.get_metric = self.metrics.get_metric
 
     def forward(self, sample, is_train: bool) -> Dict[str, torch.Tensor]:
 

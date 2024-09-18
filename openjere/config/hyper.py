@@ -2,13 +2,26 @@ from dataclasses import dataclass
 import json
 import os
 
-from typing import Optional, List
+from typing import List, Literal, Optional
+
+ModelName = Literal[
+    "selection",
+    "twotagging",
+    "seq2umt",
+    "wdec",
+    "copymtl",
+]
+
+OptimizerName = Literal[
+    "adam",
+    "sgd",
+]
 
 @dataclass
 class Hyper(object):
     def __init__(self, path: str):
         self.dataset: str
-        self.model: str
+        self.model: ModelName
 
         self.data_root: str
         self.raw_data_root: str
@@ -36,7 +49,7 @@ class Hyper(object):
         self.dropout: float = 0.5
         self.threshold: float = 0.5
         self.activation: str
-        self.optimizer: str
+        self.optimizer: OptimizerName
         self.epoch_num: int
         self.batch_size_train: int
         self.batch_size_eval: int

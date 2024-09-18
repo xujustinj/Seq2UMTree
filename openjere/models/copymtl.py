@@ -9,7 +9,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from openjere.layer.crf import CRF
-from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
 from openjere.config import NO_RELATION
 
@@ -118,8 +117,6 @@ class CopyMTL(ABCModel):
         self.emission = nn.Linear(hyper.hidden_size, len(self.bio_vocab) - 1)
         # self.ce = nn.CrossEntropyLoss(reduction="none")
         self.loss = nn.NLLLoss(reduction="none")
-        self.metrics = F1_triplet()
-        self.get_metric = self.metrics.get_metric
 
     def forward(self, sample, is_train: bool) -> Dict[str, torch.Tensor]:
 

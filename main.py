@@ -2,21 +2,20 @@ import argparse
 from collections import Counter
 import logging
 import os
-from typing import Dict, List
+from typing import Tuple, Type
 
 import numpy as np
 import torch
 from torch.optim.adam import Adam
 from torch.optim.sgd import SGD
+import torch.utils
+import torch.utils.data
 from tqdm import tqdm
 
-# from torchsummary import summary
-# from prefetch_generator import BackgroundGenerator
-BackgroundGenerator = lambda x: x
-# print = logging.info
-
-from openjere.config import Hyper
+from openjere.config import Hyper, ModelName, OptimizerName
 from openjere.dataloaders import (
+    Abstract_dataset,
+    PartialDataLoader,
     Selection_Dataset,
     Selection_loader,
     Twotagging_Dataset,
@@ -29,6 +28,7 @@ from openjere.dataloaders import (
     Copymtl_loader,
 )
 from openjere.models import (
+    ABCModel,
     MultiHeadSelection,
     Twotagging,
     Seq2umt,
@@ -36,6 +36,7 @@ from openjere.models import (
     CopyMTL,
 )
 from openjere.preprocessings import (
+    ABC_data_preprocessing,
     Selection_preprocessing,
     Twotagging_preprocessing,
     Seq2umt_preprocessing,
@@ -43,25 +44,11 @@ from openjere.preprocessings import (
     Copymtl_preprocessing,
 )
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--exp_name",
-    "-e",
-    type=str,
-    default="chinese_seq2umt",
-    help="experiments/exp_name.json",
-)
-parser.add_argument(
-    "--mode",
-    "-m",
-    type=str,
-    default="train",
-    help="preprocessing|train|evaluation|subevaluation|data_summary|model_summary",
-)
-args = parser.parse_args()
-
 
 class Runner(object):
+    model: ABCModel
+    optimizer: torch.optim.optimizer.Optimizer
+
     def __init__(self, exp_name: str):
         self.exp_name = exp_name
         self.model_dir = "saved_models"
@@ -69,12 +56,9 @@ class Runner(object):
         self.hyper = Hyper(os.path.join("experiments", self.exp_name + ".json"))
 
         self.gpu = self.hyper.gpu
-        self.preprocessor = self._preprocessor(self.hyper.model)
-        # self.metrics = F1_triplet()
-        self.optimizer = None
-        self.model = None
+        self.preprocessor = self._preprocessor()
 
-        self.Dataset, self.Loader = self._init_loader(self.hyper.model)
+        self.Dataset, self.Loader = self._init_loader()
 
         logging.basicConfig(
             filename=os.path.join("experiments", self.exp_name + ".log"),
@@ -83,57 +67,54 @@ class Runner(object):
             level=logging.INFO,
         )
 
-    def _init_loader(self, name: str):
+    def _init_loader(self) -> Tuple[Type[Abstract_dataset], PartialDataLoader]:
+        name: ModelName = self.hyper.model
+        if name == "selection":
+            return Selection_Dataset, Selection_loader
+        elif name == "twotagging":
+            return Twotagging_Dataset, Twotagging_loader
+        elif name == "seq2umt":
+            return Seq2umt_Dataset, Seq2umt_loader
+        elif name == "wdec":
+            return WDec_Dataset, WDec_loader
+        elif name == "copymtl":
+            return Copymtl_Dataset, Copymtl_loader
 
-        dataset_dic = {
-            "selection": Selection_Dataset,
-            "twotagging": Twotagging_Dataset,
-            "seq2umt": Seq2umt_Dataset,
-            "wdec": WDec_Dataset,
-            "copymtl": Copymtl_Dataset,
-        }
+    def _init_optimizer(self):
+        name: OptimizerName = self.hyper.optimizer
+        if name == "adam":
+            self.optimizer = Adam(self.model.parameters())
+        elif name == "sgd":
+            self.optimizer = SGD(self.model.parameters(), lr=0.5)
 
-        loader_dic = {
-            "selection": Selection_loader,
-            "twotagging": Twotagging_loader,
-            "seq2umt": Seq2umt_loader,
-            "wdec": WDec_loader,
-            "copymtl": Copymtl_loader,
-        }
-
-        Dataset = dataset_dic[name]
-        Loader = loader_dic[name]
-
-        if name not in dataset_dic or name not in loader_dic:
-            raise ValueError("wrong name!")
-        else:
-            return Dataset, Loader
-
-    def _optimizer(self, name, model):
-        m = {"adam": Adam(model.parameters()), "sgd": SGD(model.parameters(), lr=0.5)}
-        return m[name]
-
-    def _preprocessor(self, name: str):
-        p = {
-            "selection": Selection_preprocessing(self.hyper),
-            "twotagging": Twotagging_preprocessing(self.hyper),
-            "seq2umt": Seq2umt_preprocessing(self.hyper),
-            "wdec": WDec_preprocessing(self.hyper),
-            "copymtl": Copymtl_preprocessing(self.hyper),
-        }
-        return p[name]
+    def _preprocessor(self) -> ABC_data_preprocessing:
+        name: ModelName = self.hyper.model
+        if name == "selection":
+            return Selection_preprocessing(self.hyper)
+        elif name == "twotagging":
+            return Twotagging_preprocessing(self.hyper)
+        elif name == "seq2umt":
+            return Seq2umt_preprocessing(self.hyper)
+        elif name == "wdec":
+            return WDec_preprocessing(self.hyper)
+        elif name == "copymtl":
+            return Copymtl_preprocessing(self.hyper)
 
     def _init_model(self):
-        logging.info(self.hyper.model)
         name = self.hyper.model
-        p = {
-            "selection": MultiHeadSelection,
-            "twotagging": Twotagging,
-            "seq2umt": Seq2umt,
-            "wdec": WDec,
-            "copymtl": CopyMTL,
-        }
-        self.model = p[name](self.hyper).cuda(self.gpu)
+        logging.info(name)
+
+        if name == "selection":
+            self.model = MultiHeadSelection(self.hyper)
+        elif name == "twotagging":
+            self.model = Twotagging(self.hyper)
+        elif name == "seq2umt":
+            self.model = Seq2umt(self.hyper)
+        elif name == "wdec":
+            self.model = WDec(self.hyper)
+        elif name == "copymtl":
+            self.model = CopyMTL(self.hyper)
+        self.model.cuda(self.gpu)
 
     def preprocessing(self):
         self.preprocessor.gen_relation_vocab()
@@ -145,22 +126,21 @@ class Runner(object):
     def run(self, mode: str):
         if mode == "preprocessing":
             self.preprocessing()
+
         elif mode == "train":
             self.hyper.vocab_init()
             self._init_model()
-            self.optimizer = self._optimizer(self.hyper.optimizer, self.model)
+            self._init_optimizer()
             self.train()
+
         elif mode == "evaluation":
             self.hyper.vocab_init()
             self._init_model()
-            # self.load_model(str(self.hyper.evaluation_epoch))
             self.load_model("best")
-            # self.load_model("2")
             test_set = self.Dataset(self.hyper, self.hyper.test)
             loader = self.Loader(
                 test_set,
                 batch_size=self.hyper.batch_size_eval,
-                pin_memory=True,
                 num_workers=8,
             )
             f1, log = self.evaluation(loader)
@@ -169,9 +149,8 @@ class Runner(object):
 
         elif mode == "data_summary":
             self.hyper.vocab_init()
-            # for path in self.hyper.raw_data_list:
-            #     self.summary_data(path)
             self.summary_data(self.hyper.test)
+
         elif mode == "model_summary":
             self.hyper.vocab_init()
             self._init_model()
@@ -189,31 +168,23 @@ class Runner(object):
                 loader = self.Loader(
                     test_set,
                     batch_size=self.hyper.batch_size_eval,
-                    pin_memory=True,
                     num_workers=8,
                 )
                 f1, log = self.evaluation(loader)
                 print(log)
                 print("f1 = ", f1)
-            # raise NotImplementedError("subevaluation")
 
         elif mode == "debug":
             self.hyper.vocab_init()
-            # self._init_model()
             train_set = self.Dataset(self.hyper, self.hyper.dev)
             loader = self.Loader(
                 train_set,
                 batch_size=self.hyper.batch_size_train,
-                pin_memory=True,
                 num_workers=0,
             )
-            for epoch in range(self.hyper.epoch_num):
-                pbar = tqdm(enumerate(BackgroundGenerator(loader)), total=len(loader))
-
-                for batch_idx, sample in pbar:
-
-                    print(sample.__dict__)
-                    exit()
+            for sample in tqdm(loader):
+                print(sample.__dict__)
+                exit()
 
         else:
             raise ValueError("invalid mode")
@@ -233,45 +204,9 @@ class Runner(object):
         )
 
     def summary_data(self, dataset):
-        def count_numsubset_overlap(triplets: List[Dict[str, str]], n: int = 2) -> None:
-            def _eq_tripletsNum_n(triplets, n):
-                return len(triplets) == n
-
-            def _is_olp(ts):
-                ent_list = [t["subject"] for t in ts] + [t["object"] for t in ts]
-                ent_set = set(ent_list)
-                return len(ent_list) != len(ent_set)
-
-            cnt_all = 0
-            cnt_olp = 0
-            for ts in triplets:
-                if _eq_tripletsNum_n(ts, n):
-                    cnt_all += 1
-                    if _is_olp(ts):
-                        cnt_olp += 1
-            log = (
-                "num = %d, all sentence = %d, overlapped sentence = %d, rate = %.2f"
-                % (n, cnt_all, cnt_olp, cnt_olp / cnt_all * 100)
-            )
-            print(log)
-
-        # TODO
-        data = self.Dataset(self.hyper, dataset)
-        loader = self.Loader(data, batch_size=400, pin_memory=True, num_workers=4)
-
-        pbar = tqdm(enumerate(BackgroundGenerator(loader)), total=len(loader))
-
         len_sent_list = []
         triplet_num = []
-        triplets = []
 
-        ## count_numsubset_overlap
-        # for batch_ndx, sample in pbar:
-        #     len_sent_list.extend(sample.length)
-        #     triplet_num.extend(list(map(len, sample.spo_gold)))
-        #     triplets.extend(sample.spo_gold)
-        # count_numsubset_overlap(triplets, 2)
-        # exit()
         print(dataset)
         print("sentence num %d" % len(len_sent_list))
         print("all triplet num %d" % sum(triplet_num))
@@ -280,54 +215,16 @@ class Runner(object):
         print(Counter(triplet_num))
         print("\n")
 
-    def evaluation(self, loader):
+    def evaluation(self, loader) -> Tuple[float, str]:
         self.model.metrics.reset()
         self.model.eval()
 
-        pbar = tqdm(enumerate(BackgroundGenerator(loader)), total=len(loader))
-
         with torch.no_grad():
-            for batch_ndx, sample in pbar:
+            for sample in tqdm(loader):
                 output = self.model(sample, is_train=False)
-
-                # # DEBUG: error analysis
-
-                # # WDec
-                # for text, g, p, seq, in zip(
-                #     output["text"],
-                #     output["spo_gold"],
-                #     output["decode_result"],
-                #     output["seq"],
-                # ):
-                #     print(text)
-                #     print(g)
-                #     print(p)
-                #     print(seq)
-                #     print("-" * 50)
-                # exit()
-
-                # Seq2UMT
-                # for text, g, p in zip(
-                #     output["text"], output["spo_gold"], output["decode_result"],
-                # ):
-                #     print(text)
-                #     print(g)
-                #     print(p)
-                # exit()
-
                 self.model.run_metrics(output)
 
         result = self.model.get_metric()
-        # print(
-        #     ", ".join(
-        #         [
-        #             "%s: %.4f" % (name, value)
-        #             for name, value in result.items()
-        #             if not name.startswith("_")
-        #         ]
-        #     )
-        #     + " ||"
-        # )
         score = result["fscore"]
         log = (
             ", ".join(
@@ -339,44 +236,39 @@ class Runner(object):
             )
             + " ||"
         )
-        return result["fscore"], log
+        return score, log
 
     def train(self):
-
         train_set = self.Dataset(self.hyper, self.hyper.train)
         train_loader = self.Loader(
             train_set,
             batch_size=self.hyper.batch_size_train,
-            pin_memory=True,
             num_workers=8,
         )
         dev_set = self.Dataset(self.hyper, self.hyper.dev)
         dev_loader = self.Loader(
             dev_set,
             batch_size=self.hyper.batch_size_eval,
-            pin_memory=True,
             num_workers=4,
         )
         test_set = self.Dataset(self.hyper, self.hyper.test)
         test_loader = self.Loader(
             test_set,
             batch_size=self.hyper.batch_size_eval,
-            pin_memory=True,
             num_workers=4,
         )
         score = 0
         best_epoch = 0
         for epoch in range(self.hyper.epoch_num):
             self.model.train()
-            pbar = tqdm(
-                enumerate(BackgroundGenerator(train_loader)), total=len(train_loader)
-            )
+            pbar = tqdm(train_loader)
 
-            for batch_idx, sample in pbar:
+            for sample in pbar:
                 self.optimizer.zero_grad()
                 output = self.model(sample, is_train=True)
 
                 loss = output["loss"]
+                assert isinstance(loss, torch.Tensor)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 10.0)
 
@@ -399,5 +291,28 @@ class Runner(object):
 
 
 if __name__ == "__main__":
-    config = Runner(exp_name=args.exp_name)
-    config.run(mode=args.mode)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--exp_name",
+        "-e",
+        type=str,
+        default="chinese_seq2umt",
+        help="experiments/exp_name.json",
+    )
+    parser.add_argument(
+        "--mode",
+        "-m",
+        type=str,
+        default="train",
+        help="preprocessing|train|evaluation|subevaluation|data_summary|model_summary",
+    )
+    args = parser.parse_args()
+
+    exp_name = args.exp_name
+    assert isinstance(exp_name, str)
+
+    mode = args.mode
+    assert isinstance(mode, str)
+
+    config = Runner(exp_name=exp_name)
+    config.run(mode=mode)

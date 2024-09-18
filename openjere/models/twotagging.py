@@ -9,7 +9,6 @@ import torch
 import torch.nn as nn
 
 from openjere.config import seq_max_pool, seq_and_vec, seq_gather
-from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
 
 
@@ -40,8 +39,6 @@ class Twotagging(ABCModel):
         )  # 49
         self.CE = torch.nn.CrossEntropyLoss()
         self.BCE = torch.nn.BCEWithLogitsLoss()
-        self.metrics = F1_triplet()
-        self.get_metric = self.metrics.get_metric
 
     def masked_BCEloss(self, logits, gt, mask):
         loss = self.BCE(logits, gt)

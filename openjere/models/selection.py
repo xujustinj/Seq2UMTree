@@ -10,7 +10,6 @@ import torch.nn.functional as F
 
 from openjere.config import PAD, NO_RELATION
 from openjere.layer.crf import CRF
-from openjere.metrics import F1_triplet
 from openjere.models.abc_model import ABCModel
 
 
@@ -75,9 +74,6 @@ class MultiHeadSelection(ABCModel):
         self.selection_uv = nn.Linear(2 * hyper.rel_emb_size, hyper.rel_emb_size)
         # remove <pad>
         self.emission = nn.Linear(hyper.hidden_size, len(self.bio_vocab) - 1)
-
-        self.metrics = F1_triplet()
-        self.get_metric = self.metrics.get_metric
 
     def inference(self, mask, text_list, decoded_tag, selection_logits):
         selection_mask = (

@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.utils.data.dataloader import DataLoader
 
-from .abc_dataset import Abstract_dataset
+from .abc_dataset import Abstract_dataset, PartialDataLoader
 
 
 def get_now_time():
@@ -192,8 +192,4 @@ class Batch_reader(object):
         return self
 
 
-def collate_fn(batch):
-    return Batch_reader(batch)
-
-
-Seq2umt_loader = partial(DataLoader, collate_fn=collate_fn, pin_memory=True)
+Seq2umt_loader = PartialDataLoader(Batch_reader)

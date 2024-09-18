@@ -16,7 +16,7 @@ from openjere.config.const import (
     SEP_SEMICOLON,
     SEP_VERTICAL_BAR,
 )
-from .abc_dataset import Abstract_dataset
+from .abc_dataset import Abstract_dataset, PartialDataLoader
 
 
 
@@ -132,8 +132,4 @@ class Batch_reader(object):
         return self
 
 
-def collate_fn(batch):
-    return Batch_reader(batch)
-
-
-WDec_loader = partial(DataLoader, collate_fn=collate_fn, pin_memory=True)
+WDec_loader = PartialDataLoader(Batch_reader)
