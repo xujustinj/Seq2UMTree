@@ -6,7 +6,6 @@ import random
 from typing import Dict, List
 
 import numpy as np
-from recordclass import recordclass
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -56,7 +55,6 @@ drop_rate = 0.3
 layers = 1
 early_stop_cnt = 5
 sample_cnt = 0
-Sample = recordclass("Sample", "Id SrcLen SrcWords TrgLen TrgWords AdjMat")
 
 
 def get_pred_words(preds, attns, src_words, word_vocab, rev_word_vocab):

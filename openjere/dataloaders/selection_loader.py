@@ -1,15 +1,11 @@
-import os
 import json
+import os
+from typing import List
 
 import torch
 
-from torch.utils.data.dataloader import DataLoader
-
-from functools import partial
-from typing import List
-
-from .abc_dataset import Abstract_dataset, PartialDataLoader
 from openjere.config import PAD, OOV, NO_RELATION
+from .abc_dataset import Abstract_dataset, PartialDataLoader
 
 
 class Selection_Dataset(Abstract_dataset):

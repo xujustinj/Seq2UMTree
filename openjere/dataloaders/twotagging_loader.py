@@ -1,6 +1,5 @@
 #! -*- coding:utf-8 -*-
 
-from functools import partial
 import json
 import os
 from random import choice
@@ -8,7 +7,6 @@ import time
 
 import numpy as np
 import torch
-from torch.utils.data.dataloader import DataLoader
 # torch.backends.cudnn.benchmark = True
 
 from .abc_dataset import Abstract_dataset, PartialDataLoader

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import json
 import os
-from typing import Any, Callable, Optional, Protocol
+from typing import Any, Callable, Optional
 
 from torch.utils.data import Dataset, DataLoader
 

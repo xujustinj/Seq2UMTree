@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 exps=(
     chinese_selection
     chinese_wdec

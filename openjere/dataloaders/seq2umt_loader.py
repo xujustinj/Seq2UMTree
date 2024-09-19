@@ -1,6 +1,5 @@
 #! -*- coding:utf-8 -*-
 
-from functools import partial
 import json
 import os
 import time
@@ -9,7 +8,6 @@ import time
 
 import numpy as np
 import torch
-from torch.utils.data.dataloader import DataLoader
 
 from .abc_dataset import Abstract_dataset, PartialDataLoader
 
@@ -155,19 +153,19 @@ class Batch_reader(object):
         self.orig_idx = orig_idx
         self.length = transposed_data[10]
 
-        self.T = torch.LongTensor(transposed_data[0])
-        self.S1 = torch.FloatTensor(transposed_data[1])
-        self.S2 = torch.FloatTensor(transposed_data[2])
-        self.O1 = torch.FloatTensor(transposed_data[3])
-        self.O2 = torch.FloatTensor(transposed_data[4])
+        self.T = torch.from_numpy(np.stack(transposed_data[0])).long()
+        self.S1 = torch.from_numpy(np.stack(transposed_data[1])).float()
+        self.S2 = torch.from_numpy(np.stack(transposed_data[2])).float()
+        self.O1 = torch.from_numpy(np.stack(transposed_data[3])).float()
+        self.O2 = torch.from_numpy(np.stack(transposed_data[4])).float()
 
-        self.R_gt = torch.FloatTensor(transposed_data[5])
-        self.R_in = torch.LongTensor(transposed_data[6])
+        self.R_gt = torch.from_numpy(np.stack(transposed_data[5])).float()
+        self.R_in = torch.from_numpy(np.stack(transposed_data[6])).long()
 
-        self.S_K1_in = torch.LongTensor(transposed_data[7])
-        self.S_K2_in = torch.LongTensor(transposed_data[8])
-        self.O_K1_in = torch.LongTensor(transposed_data[9])
-        self.O_K2_in = torch.LongTensor(transposed_data[10])
+        self.S_K1_in = torch.from_numpy(np.stack(transposed_data[7])).long()
+        self.S_K2_in = torch.from_numpy(np.stack(transposed_data[8])).long()
+        self.O_K1_in = torch.from_numpy(np.stack(transposed_data[9])).long()
+        self.O_K2_in = torch.from_numpy(np.stack(transposed_data[10])).long()
         self.text = transposed_data[11]
         self.length = transposed_data[12]
 

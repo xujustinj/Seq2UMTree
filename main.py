@@ -7,6 +7,7 @@ from typing import Tuple, Type
 import numpy as np
 import torch
 from torch.optim.adam import Adam
+from torch.optim.optimizer import Optimizer
 from torch.optim.sgd import SGD
 import torch.utils
 import torch.utils.data
@@ -47,7 +48,7 @@ from openjere.preprocessings import (
 
 class Runner(object):
     model: ABCModel
-    optimizer: torch.optim.optimizer.Optimizer
+    optimizer: Optimizer
 
     def __init__(self, exp_name: str):
         self.exp_name = exp_name

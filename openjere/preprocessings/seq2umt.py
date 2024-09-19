@@ -243,9 +243,6 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
                 else:
                     raise ValueError("should be in predicate, subject, object")
 
-            # rel_in = to_in_key(t1_in, order[0])
-            # s_k1, s_k2 = to_in_key(t2_in, order[1])
-
             result = {
                 "text": text,
                 "spo_list": spo_list,
@@ -273,12 +270,6 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
             if t["object"] not in text or t["subject"] not in text:
                 return False
         return True
-
-    # @overrides
-    # def gen_vocab(self, min_freq: int):
-    #     super(Chinese_seq2umt_preprocessing, self).gen_vocab(
-    #         min_freq, init_result={"<pad>": 0}
-    #     )
 
     @overrides
     def gen_all_data(self):

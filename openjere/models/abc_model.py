@@ -8,7 +8,7 @@ from openjere.metrics import F1_triplet
 
 class ABCModel(ABC, nn.Module):
     def __init__(self):
-        super(nn.Module, self).__init__()
+        super(ABCModel, self).__init__()
 
         self.metrics = F1_triplet()
 

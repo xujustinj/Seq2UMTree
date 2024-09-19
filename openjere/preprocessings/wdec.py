@@ -10,7 +10,6 @@ from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 
 
 class WDec_preprocessing(ABC_data_preprocessing):
-    @overrides
     def gen_vocab(self, min_freq: int):
         super(WDec_preprocessing, self).gen_vocab(
             min_freq,

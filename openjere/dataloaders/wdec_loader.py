@@ -1,12 +1,9 @@
-from functools import partial
 import json
 import os
 import random
 from typing import List
 
-from recordclass import recordclass
 import torch
-from torch.utils.data.dataloader import DataLoader
 
 from openjere.config.const import (
     seq_padding,
@@ -17,10 +14,6 @@ from openjere.config.const import (
     SEP_VERTICAL_BAR,
 )
 from .abc_dataset import Abstract_dataset, PartialDataLoader
-
-
-
-Sample = recordclass("Sample", "Id SrcLen SrcWords TrgLen TrgWords AdjMat")
 
 
 def get_target_vocab_mask(src_words, word_vocab, relations):

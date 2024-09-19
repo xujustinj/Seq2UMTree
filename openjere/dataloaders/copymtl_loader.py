@@ -1,10 +1,8 @@
-from functools import partial
 import json
 import os
 from typing import List
 
 import torch
-from torch.utils.data.dataloader import DataLoader
 
 from openjere.config import NO_RELATION
 from .abc_dataset import Abstract_dataset, PartialDataLoader
