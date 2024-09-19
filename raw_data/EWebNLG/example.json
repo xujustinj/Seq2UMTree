@@ -1,0 +1,20 @@
+{
+  "spo_list": [
+    {
+      "subject": "1_Decembrie_1918_University",
+      "predicate": "city",
+      "object": "Alba_Iulia"
+    },
+    {
+      "subject": "1_Decembrie_1918_University",
+      "predicate": "state",
+      "object": "Alba"
+    },
+    {
+      "subject": "1_Decembrie_1918_University",
+      "predicate": "country",
+      "object": "Romania"
+    }
+  ],
+  "text": "AGENT_1 is located in PATIENT_3 , PATIENT_6 , PATIENT_5 ."
+}

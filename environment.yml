@@ -11,5 +11,8 @@ dependencies:
   - overrides
   - pytorch=*=*cuda*
   - recordclass
+  - spacy
+  - spacy-model-en_core_web_sm
   - tqdm
   - transformers
+  - xmltodict

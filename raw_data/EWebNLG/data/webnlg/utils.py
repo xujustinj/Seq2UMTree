@@ -1,22 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, unicode_literals, print_function
 
-import itertools
-import re
-import json
-
 from enum import Enum
-from typing import List, Tuple, Dict, Callable
-
-import sys
+import itertools
+import json
 import os.path
+import re
+import sys
+from typing import Callable, Dict, List, Optional, Tuple
 
-try:
-    import spacy
-except ImportError:
-    os.system("pip install spacy")
-    os.system("python -m spacy download en")
-    import spacy
+import spacy
+
 
 ALPHA = chr(2)  # Start of text
 OMEGA = chr(3)  # End of text
@@ -48,9 +42,9 @@ class DataSetType(Enum):
 class DataReader:
     def __init__(
         self,
-        data: List[dict],
-        misspelling: Dict[str, str] = None,
-        rephrase: Tuple[Callable, Callable] = (None, None),
+        data: List[Dict],
+        misspelling: Optional[Dict[str, str]] = None,
+        rephrase: Tuple[Optional[Callable], Optional[Callable]] = (None, None),
     ):
         self.data = data
         self.misspelling = misspelling
@@ -71,17 +65,8 @@ class DataReader:
 
 
 class Cleaner:
-    def __init__(self, verbose=False):
+    def __init__(self):
         self.fname_ends = [k[0] for k in self.filter_dic]
-        # if verbose:
-        #     keys = set(self.filter_dic.keys())
-        #     with open('temp.txt') as f:
-        #         data = [tuple(json.loads(line)) for line in f if line]
-        #
-        #     if set(data) != set(keys):
-        #         import pdb;
-        #         pdb.set_trace()
-        #         set(keys) - set(data)
 
     def clean(self, filename):
         fname_end = "/".join(filename.rsplit("/", 3)[1:])
@@ -97,8 +82,6 @@ class Cleaner:
                 if line:
                     lines.append(line)
         if lines != content:
-            # import pdb;
-            # pdb.set_trace()
             fwrite("".join(lines), filename)
 
     def filter_line(self, fname_end, line_ix, line):
@@ -1249,13 +1232,12 @@ class Cleaner:
 
 class NLP:
     def __init__(self):
-
-        self.nlp = spacy.load("en", disable=["ner", "parser", "tagger"])
-        self.nlp.add_pipe(self.nlp.create_pipe("sentencizer"))
+        self.nlp = spacy.load("en_core_web_sm", disable=["ner", "parser", "tagger"])
+        self.nlp.add_pipe("sentencizer")
 
     def sent_tokenize(self, text):
         doc = self.nlp(text)
-        sentences = [sent.string.strip() for sent in doc.sents]
+        sentences = [sent.text.strip() for sent in doc.sents]
         return sentences
 
     def word_tokenize(self, text, lower=False):  # create a tokenizer function
@@ -1472,7 +1454,7 @@ def rephrase(entity):
 
     # Allow rephrase "number (unit)" -> "number unit", "number unit-short"
     for p in set(phrasings):
-        match = re.match("^(-?(\d+|\d{1,3}(,\d{3})*)(\.\d+)?)( (\((.*?)\)))?$", p)
+        match = re.match(r"^(-?(\d+|\d{1,3}(,\d{3})*)(\.\d+)?)( (\((.*?)\)))?$", p)
         if match:
             groups = match.groups()
             number = float(groups[0])
@@ -1543,7 +1525,7 @@ def rephrase(entity):
 
     # Allow rephrase "word1 (word2)" -> "word2 word1"
     for p in set(phrasings):
-        match = re.match("^(.* ?) \((.* ?)\)$", p)
+        match = re.match(r"^(.* ?) \((.* ?)\)$", p)
         if match:
             groups = match.groups()
             s = groups[0]
@@ -1564,14 +1546,14 @@ def rephrase_if_must(entity):
 
     # Allow removing parenthesis "word1 (word2)" -> "word1"
     for p in set(phrasings):
-        match = re.match("^(.* ?) \((.* ?)\)$", p)
+        match = re.match(r"^(.* ?) \((.* ?)\)$", p)
         if match:
             groups = match.groups()
             phrasings.add(groups[0])
 
     # Allow rephrase "word1 (word2) word3?" -> "word1( word3)"
     for p in set(phrasings):
-        match = re.match("^(.*?) \((.*?)\)( .*)?$", p)
+        match = re.match(r"^(.*?) \((.*?)\)( .*)?$", p)
         if match:
             groups = match.groups()
             s = groups[0]
@@ -2519,4 +2501,4 @@ def fix_tokenize(sentences):
 
 
 if __name__ == "__main__":
-    cl = Cleaner(verbose=True)
+    cl = Cleaner()

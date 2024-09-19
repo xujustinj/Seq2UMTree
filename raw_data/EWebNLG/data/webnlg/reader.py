@@ -5,11 +5,7 @@ from os import listdir, path
 from os.path import isdir
 from collections import defaultdict
 
-try:
-    import xmltodict
-except ImportError:
-    os.system("pip install xmltodict")
-    import xmltodict
+import xmltodict
 
 sys.path.append(os.path.abspath("."))
 from utils import (
@@ -367,9 +363,9 @@ def write_line(path: str):
 def main():
     # download()
 
-    # for typ in DataSetType:
-    #     data_reader = WebNLGDataReader(typ)
-    #     data_reader.save()
+    for typ in DataSetType:
+        data_reader = WebNLGDataReader(typ)
+        data_reader.save()
 
     cp_data()
 

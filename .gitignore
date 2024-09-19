@@ -22,3 +22,4 @@ raw_data/EWebNLG/data/webnlg/raw/*
 **.zip
 **/all_50_schemas
 !experiments/*
+!raw_data/EWebNLG/example.json
