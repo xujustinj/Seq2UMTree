@@ -1,4 +1,3 @@
-import time
 from typing import List
 
 import torch
@@ -12,10 +11,10 @@ SEP_VERTICAL_BAR = "<|>"
 NO_RELATION = "<NA>"
 
 
-def seq_max_pool(x):
-    seq, mask = x
-    seq = seq - (1 - mask) * 1e10
-    return torch.max(seq, 1)
+def seq_max_pool(x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    x = torch.where(mask, x, -torch.inf)
+    m, _ = torch.max(x, dim=1)
+    return m
 
 
 def seq_and_vec(x):
@@ -32,7 +31,7 @@ def seq_and_vec(x):
 
 def seq_gather(x):
     """seq is [None, seq_len, s_size]
-    idxs is [None, 1], select idxs[i] vec，
+    idxs is [None, 1], select idxs[i] vec,
     output is [None, s_size]
     """
     seq, idxs = x
@@ -51,12 +50,7 @@ def seq_gather(x):
     return res
 
 
-def get_now_time():
-    a = time.time()
-    return time.ctime(a)
-
-
-def seq_padding(X):
+def seq_padding(X: List[List[int]]) -> List[List[int]]:
     L = [len(x) for x in X]
     ML = max(L)
     return [x + [0] * (ML - len(x)) for x in X]

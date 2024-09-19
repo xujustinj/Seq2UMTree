@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import json
 import os
 
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Tuple
 
 ModelName = Literal[
     "selection",
@@ -15,6 +15,12 @@ ModelName = Literal[
 OptimizerName = Literal[
     "adam",
     "sgd",
+]
+
+ComponentName = Literal[
+    "subject",
+    "predicate",
+    "object",
 ]
 
 @dataclass
@@ -36,7 +42,6 @@ class Hyper(object):
         self.evaluation_epoch: int
         self.max_text_len: int
 
-        self.order: List[str]
         self.max_decode_len: Optional[int]
         self.max_encode_len: Optional[int]
 
@@ -57,6 +62,15 @@ class Hyper(object):
         self.gpu: int
 
         self.__dict__ = json.load(open(path, "r"))
+
+        o1: ComponentName
+        o2: ComponentName
+        o3: ComponentName
+        o1, o2, o3 = self.__dict__["order"]
+        assert isinstance(o1, str)
+        assert isinstance(o2, str)
+        assert isinstance(o3, str)
+        self.order: Tuple[ComponentName, ComponentName, ComponentName] = (o1, o2, o3)
 
     def vocab_init(self):
         self.word2id = json.load(

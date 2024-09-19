@@ -10,9 +10,6 @@ from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 class Copymtl_preprocessing(ABC_data_preprocessing):
     @overrides
     def _read_line(self, line: str) -> Optional[str]:
-        line = line.strip("\n")
-        if not line:
-            return None
         instance = json.loads(line)
         text = instance["text"]
 

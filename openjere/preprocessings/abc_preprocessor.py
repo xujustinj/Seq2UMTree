@@ -5,6 +5,7 @@ import json
 import os
 from typing import Dict, List, Optional
 
+from openjere.config import Hyper
 from openjere.config.const import (
     PAD,
     OOV,
@@ -16,7 +17,7 @@ from openjere.config.const import (
 
 
 class ABC_data_preprocessing(ABC):
-    def __init__(self, hyper):
+    def __init__(self, hyper: Hyper):
         self.hyper = hyper
         self.raw_data_root = hyper.raw_data_root
         self.data_root = hyper.data_root
@@ -27,22 +28,23 @@ class ABC_data_preprocessing(ABC):
         self.relation_vocab_path = os.path.join(self.data_root, hyper.relation_vocab)
 
     @cached_property
-    def relation_vocab(self):
-        if os.path.exists(self.relation_vocab_path):
-            pass
-        else:
+    def relation_vocab(self) -> Dict[str, int]:
+        if not os.path.exists(self.relation_vocab_path):
             self.gen_relation_vocab()
-        return json.load(open(self.relation_vocab_path, "r", encoding="utf-8"))
+        with open(self.relation_vocab_path, "r", encoding="utf-8") as f:
+            vocab = json.load(f)
+        assert isinstance(vocab, dict)
+        return vocab
 
     # model
     @abstractmethod
     def _read_line(self, line: str) -> Optional[str]:
-        raise NotImplementedError("abc method!")
+        raise NotImplementedError
 
     # model
     @abstractmethod
     def _check_valid(self, text: str, spo_list: List[Dict[str, str]]) -> bool:
-        pass
+        raise NotImplementedError
 
     # model
     def gen_all_data(self):
@@ -57,6 +59,9 @@ class ABC_data_preprocessing(ABC):
             target, "w", encoding="utf-8"
         ) as t:
             for line in s:
+                line = line.strip("\n")
+                if line == "":
+                    continue
                 newline = self._read_line(line)
                 if newline is not None:
                     t.write(newline)
@@ -112,17 +117,14 @@ class ABC_data_preprocessing(ABC):
         source = os.path.join(self.raw_data_root, self.hyper.train)
 
         for spo_list in self.yield_key(source, "spo_list"):
-            rel_set.update(self.spo_to_relations(None, spo_list))
+            rel_set.update(self.spo_to_relations("", spo_list))
 
         relation_vocab = {k: v for v, k in enumerate(rel_set)}
         relation_vocab[NO_RELATION] = len(relation_vocab)
-        json.dump(
-            relation_vocab,
-            open(self.relation_vocab_path, "w", encoding="utf-8"),
-            ensure_ascii=False,
-        )
+        with open(self.relation_vocab_path, "w", encoding="utf-8") as f:
+            json.dump(relation_vocab, f, ensure_ascii=False)
 
-    def yield_key(self, source: str, key: str) -> List[str]:
+    def yield_key(self, source: str, key: str):
         # key = "text"
         with open(source, "r", encoding="utf-8") as s:
             for line in s:

@@ -9,14 +9,8 @@ from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 
 
 class Twotagging_preprocessing(ABC_data_preprocessing):
-    # def __init__(self, hyper):
-    #     super(Chinese_twotagging_preprocessing, self).__init__(hyper)
-
     @overrides
     def _read_line(self, line: str) -> Optional[str]:
-        line = line.strip("\n")
-        if not line:
-            return None
         instance = json.loads(line)
         text = instance["text"]
 

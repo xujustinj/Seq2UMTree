@@ -1,9 +1,10 @@
-import os
 import json
-from typing import Dict, List, Tuple, Optional
+import os
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from overrides import overrides
 
+from openjere.config import ComponentName
 from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 
 
@@ -11,38 +12,33 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
     @overrides
     def _read_line(self, line: str) -> Optional[str]:
         # for evaluation only
-        line = line.strip("\n")
-        if not line:
-            return None
         instance = json.loads(line)
+        assert isinstance(instance, dict)
         text = instance["text"]
+        assert isinstance(text, str)
 
-        if "spo_list" in instance:
-            spo_list = instance["spo_list"]
-
-            if not self._check_valid(text, spo_list):
-                return None
-            spo_list = [
-                {
-                    "predicate": spo["predicate"],
-                    "object": spo["object"],
-                    "subject": spo["subject"],
-                }
-                for spo in spo_list
-            ]
+        spo_list = instance["spo_list"]
+        assert isinstance(spo_list, list)
+        if not self._check_valid(text, spo_list):
+            return None
+        extracted_spo_list: List[Dict[ComponentName, str]] = [
+            {
+                "predicate": spo["predicate"],
+                "object": spo["object"],
+                "subject": spo["subject"],
+            }
+            for spo in spo_list
+        ]
 
         result = {
             "text": text,
-            "spo_list": spo_list,
+            "spo_list": extracted_spo_list,
         }
         return json.dumps(result, ensure_ascii=False)
 
-    def _train_read_line(self, line: str) -> List[str]:
+    def _train_read_line(self, line: str) -> Optional[List[str]]:
         # teacher forcing
         # batches are aligned by the triplets rather than sentences.
-        line = line.strip("\n")
-        if not line:
-            return None
         instance = json.loads(line)
         text = instance["text"]
 
@@ -61,16 +57,14 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
             ]
 
         result = self.spo_to_seq(text, spo_list)
-        # print(result)
         result = [json.dumps(r, ensure_ascii=False) for r in result]
-        # print(result)
-        # if len(spo_list) > 1:
-        #     exit()
         return result
 
     def spo_to_tree(
-        self, spo_list: List[Dict[str, str]], order=("predicate", "subject", "object")
-    ) -> List[Tuple[str]]:
+        self,
+        spo_list: List[Dict[str, str]],
+        order: Tuple[str, str, str] = ("predicate", "subject", "object")
+    ) -> List[Tuple[str, str, List[str], List[str], List[str]]]:
         """return the ground truth of the tree: rel, subj, obj, used for teacher forcing.
 
         r: given text, one of the relations
@@ -90,8 +84,7 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
             List[Tuple[str]] -- [(r, s, rel, subj, obj)]
         """
         # rel, subj, obj
-        #
-        result = []
+        result: List[Tuple[str, str, List[str], List[str], List[str]]] = []
         t1_out = list(set(t[order[0]] for t in spo_list))
         for t1_in in t1_out:
             t2_out = list(set(t[order[1]] for t in spo_list if t[order[0]] == t1_in))
@@ -186,44 +179,43 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
         tree = self.spo_to_tree(spo_list, order)
         tokens = self.hyper.tokenizer(text)
 
-        def to_rel(outp):
-            # pure
-
-            rel_idx = [0] * len(self.relation_vocab)
+        def to_rel(outp: List[str]) -> List[Literal[0, 1]]:
+            rel_idx: List[Literal[0, 1]] = [0] * len(self.relation_vocab)
             for rel_name in outp:
                 rel_idx[self.relation_vocab[rel_name]] = 1
             return rel_idx
 
-        def to_ent(outp):
-            # side effect!
-            ent1, ent2 = [[0] * len(tokens) for _ in range(2)]
+        def to_ent(outp: List[str]) -> Tuple[List[Literal[0, 1]], List[Literal[0, 1]]]:
+            ent1: List[Literal[0, 1]] = [0] * len(tokens)
+            ent2: List[Literal[0, 1]] = [0] * len(tokens)
             for name in outp:
-                # # TODO
-                # print(tokens)
-                # print(name)
-                # exit()
                 id = find(tokens, self.hyper.tokenizer(name))
                 ent1[id] = 1
                 ent2[id + len(self.hyper.tokenizer(name)) - 1] = 1
             return ent1, ent2
 
-        def to_in_key(inp, name):
-            # side effect!
+        def to_in_key(inp: Optional[str], name: ComponentName) -> Union[int, Tuple[int, int]]:
             if not inp:
                 return 0, 0
-
-            if name == "predicate":
-                rel_in = self.relation_vocab[inp]
-                out = rel_in
+            elif name == "predicate":
+                return self.relation_vocab[inp]
             else:
                 k1 = find(tokens, self.hyper.tokenizer(inp))
                 k2 = k1 + len(self.hyper.tokenizer(inp)) - 1
-                out = k1, k2
-            return out
+                return k1, k2
 
-        op_dic = {"predicate": to_rel, "subject": to_ent, "object": to_ent}
+        op_dic: Dict[
+            ComponentName,
+            Callable[
+                [List[str]],
+                Union[
+                    List[Literal[0, 1]],
+                    Tuple[List[Literal[0, 1]], List[Literal[0, 1]]]
+                ]
+            ]
+        ] = {"predicate": to_rel, "subject": to_ent, "object": to_ent}
 
-        results = []
+        results: List[Dict[str, Any]] = []
         for t in tree:
             t1_in, t2_in, t1_out, t2_out, t3_out = t
 
@@ -236,10 +228,14 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
                     rel_in = to_in_key(ori_in, name)
                 elif name == "subject":
                     s1, s2 = new_out
-                    s_k1, s_k2 = to_in_key(ori_in, name)
+                    k = to_in_key(ori_in, name)
+                    assert isinstance(k, tuple)
+                    s_k1, s_k2 = k
                 elif name == "object":
                     o1, o2 = new_out
-                    o_k1, o_k2 = to_in_key(ori_in, name)
+                    k = to_in_key(ori_in, name)
+                    assert isinstance(k, tuple)
+                    o_k1, o_k2 = k
                 else:
                     raise ValueError("should be in predicate, subject, object")
 
@@ -263,7 +259,7 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
 
     @overrides
     def _check_valid(self, text: str, spo_list: List[Dict[str, str]]) -> bool:
-        if spo_list == []:
+        if len(spo_list) == 0:
             return False
 
         for t in spo_list:
@@ -290,6 +286,9 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
             target, "w", encoding="utf-8"
         ) as t:
             for line in s:
+                line = line.strip("\n")
+                if line == "":
+                    continue
                 newlines = self._train_read_line(line)
                 if newlines is not None:
                     for newline in newlines:

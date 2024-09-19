@@ -8,14 +8,8 @@ from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 
 
 class Selection_preprocessing(ABC_data_preprocessing):
-    # def __init__(self, hyper):
-    #     super(Chinese_selection_preprocessing, self).__init__(hyper)
-
     @overrides
     def _read_line(self, line: str) -> Optional[str]:
-        line = line.strip("\n")
-        if not line:
-            return None
         instance = json.loads(line)
         text = instance["text"]
 
@@ -96,12 +90,12 @@ class Selection_preprocessing(ABC_data_preprocessing):
         return selection
 
     def spo_to_bio(self, text: str, entities: List[str]) -> List[str]:
-        text = self.hyper.tokenizer(text)
+        tokens = self.hyper.tokenizer(text)
         bio = ["O"] * len(text)
         for e in entities:
-            begin = find(text, self.hyper.tokenizer(e))
-            # begin = text.find(e)
-            end = begin + len(self.hyper.tokenizer(e)) - 1
+            e_tokens = self.hyper.tokenizer(e)
+            begin = find(tokens, e_tokens)
+            end = begin + len(e_tokens) - 1
 
             assert end <= len(text)
 

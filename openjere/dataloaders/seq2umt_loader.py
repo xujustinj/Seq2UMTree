@@ -2,31 +2,12 @@
 
 import json
 import os
-import time
-
-# torch.backends.cudnn.benchmark = True
 
 import numpy as np
 import torch
 
+from openjere.config import seq_padding
 from .abc_dataset import Abstract_dataset, PartialDataLoader
-
-
-def get_now_time():
-    a = time.time()
-    return time.ctime(a)
-
-
-def seq_padding(X):
-    L = [len(x) for x in X]
-    ML = max(L)
-    return [x + [0] * (ML - len(x)) for x in X]
-
-
-def seq_padding_vec(X):
-    L = [len(x) for x in X]
-    ML = max(L)
-    return [x + [[1, 0]] * (ML - len(x)) for x in X]
 
 
 def sort_all(batch, lens):

@@ -2,40 +2,39 @@
 from functools import partial
 import json
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-from openjere.config import seq_max_pool, seq_and_vec, seq_gather
+from openjere.config import Hyper, seq_max_pool, seq_and_vec, seq_gather
 from openjere.models.abc_model import ABCModel
 
 
 class Twotagging(ABCModel):
-    def __init__(self, hyper) -> None:
+    def __init__(self, hyper: Hyper) -> None:
         super(Twotagging, self).__init__()
         self.hyper = hyper
         self.data_root = hyper.data_root
         self.gpu = hyper.gpu
 
-        self.word_vocab = json.load(
-            open(os.path.join(self.data_root, "word_vocab.json"), "r")
-        )
-        self.relation_vocab = json.load(
-            open(os.path.join(self.data_root, "relation_vocab.json"), "r")
-        )
+        with open(os.path.join(self.data_root, "word_vocab.json"), "r") as f:
+            self.word_vocab: Dict[str, int] = json.load(f)
+        assert isinstance(self.word_vocab, dict)
+        with open(os.path.join(self.data_root, "relation_vocab.json"), "r") as f:
+            self.relation_vocab: Dict[str, int] = json.load(f)
+        assert isinstance(self.relation_vocab, dict)
         self.id2word = {v: k for k, v in self.word_vocab.items()}
         self.id2rel = {v: k for k, v in self.relation_vocab.items()}
 
         self.S = s_model(
-            len(self.word_vocab), self.hyper.emb_size, self.hyper.hidden_size
+            word_dict_length=len(self.word_vocab),
+            word_emb_size=self.hyper.emb_size,
         )
         self.PO = po_model(
-            len(self.word_vocab),
-            self.hyper.emb_size,
-            self.hyper.hidden_size,
-            len(self.relation_vocab),
+            word_emb_size=self.hyper.emb_size,
+            num_classes=len(self.relation_vocab),
         )  # 49
         self.CE = torch.nn.CrossEntropyLoss()
         self.BCE = torch.nn.BCEWithLogitsLoss()
@@ -149,13 +148,11 @@ class Twotagging(ABCModel):
 
 
 class s_model(nn.Module):
-    def __init__(self, word_dict_length, word_emb_size, lstm_hidden_size):
+    def __init__(self, word_dict_length, word_emb_size):
         super(s_model, self).__init__()
 
         self.embeds = nn.Embedding(word_dict_length, word_emb_size).cuda()
-        self.fc1_dropout = nn.Sequential(
-            nn.Dropout(0.25).cuda(),  # drop 20% of the neuron
-        ).cuda()
+        self.fc1_dropout = nn.Dropout(0.25)
 
         self.lstm1 = nn.LSTM(
             input_size=word_emb_size,
@@ -181,44 +178,47 @@ class s_model(nn.Module):
                 stride=1,  # 每隔多少步跳一下
                 padding=1,  # 周围围上一圈 if stride= 1, pading=(kernel_size-1)/2
             ).cuda(),
-            nn.ReLU().cuda(),
+            nn.ReLU(),
         ).cuda()
-        self.fc_ps1 = nn.Sequential(nn.Linear(word_emb_size, 1),).cuda()
+        self.fc_ps1 = nn.Linear(word_emb_size, 1).cuda()
 
-        self.fc_ps2 = nn.Sequential(nn.Linear(word_emb_size, 1),).cuda()
+        self.fc_ps2 = nn.Linear(word_emb_size, 1).cuda()
 
-    def forward(self, t):
-        mask = torch.gt(torch.unsqueeze(t, 2), 0).type(
-            torch.cuda.FloatTensor
-        )  # (batch_size,sent_len,1)
+    def forward(self, t: torch.Tensor) -> Tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
+        B, L = t.shape
+        mask = (t > 0).float().unsqueeze(dim=-1)
         mask.requires_grad = False
+        assert mask.shape == (B, L, 1)
         t = self.embeds(t)
 
         t = self.fc1_dropout(t)
 
         t = t.mul(mask)  # (batch_size,sent_len,char_size)
 
-        t, (h_n, c_n) = self.lstm1(t, None)
-        t, (h_n, c_n) = self.lstm2(t, None)
+        t, _ = self.lstm1(t, None)
+        t, _ = self.lstm2(t, None)
 
-        t_max, t_max_index = seq_max_pool([t, mask])
+        t_max = seq_max_pool(t, mask)
 
-        t_dim = list(t.size())[-1]
-        h = seq_and_vec([t, t_max])
-
+        h: torch.Tensor = seq_and_vec([t, t_max])
         h = h.permute(0, 2, 1)
         h = self.conv1(h)
-
         h = h.permute(0, 2, 1)
 
-        ps1 = self.fc_ps1(h)
-        ps2 = self.fc_ps2(h)
+        ps1: torch.Tensor = self.fc_ps1(h)
+        ps2: torch.Tensor = self.fc_ps2(h)
 
-        return [ps1, ps2, t, t_max, mask]
+        return ps1, ps2, t, t_max, mask
 
 
 class po_model(nn.Module):
-    def __init__(self, word_dict_length, word_emb_size, lstm_hidden_size, num_classes):
+    def __init__(self, word_emb_size, num_classes):
         super(po_model, self).__init__()
 
         self.conv1 = nn.Sequential(
@@ -229,18 +229,11 @@ class po_model(nn.Module):
                 stride=1,  # 每隔多少步跳一下
                 padding=1,  # 周围围上一圈 if stride= 1, pading=(kernel_size-1)/2
             ).cuda(),
-            nn.ReLU().cuda(),
+            nn.ReLU(),
         ).cuda()
 
-        self.fc_ps1 = nn.Sequential(
-            nn.Linear(word_emb_size, num_classes + 1).cuda(),
-            # nn.Softmax(),
-        ).cuda()
-
-        self.fc_ps2 = nn.Sequential(
-            nn.Linear(word_emb_size, num_classes + 1).cuda(),
-            # nn.Softmax(),
-        ).cuda()
+        self.fc_ps1 = nn.Linear(word_emb_size, num_classes + 1).cuda()
+        self.fc_ps2 = nn.Linear(word_emb_size, num_classes + 1).cuda()
 
     def forward(self, t, t_max, k1, k2):
 

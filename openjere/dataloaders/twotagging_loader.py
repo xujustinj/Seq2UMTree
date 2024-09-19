@@ -3,30 +3,12 @@
 import json
 import os
 from random import choice
-import time
 
 import numpy as np
 import torch
-# torch.backends.cudnn.benchmark = True
 
+from openjere.config import seq_padding
 from .abc_dataset import Abstract_dataset, PartialDataLoader
-
-
-def get_now_time():
-    a = time.time()
-    return time.ctime(a)
-
-
-def seq_padding(X):
-    L = [len(x) for x in X]
-    ML = max(L)
-    return [x + [0] * (ML - len(x)) for x in X]
-
-
-def seq_padding_vec(X):
-    L = [len(x) for x in X]
-    ML = max(L)
-    return [x + [[1, 0]] * (ML - len(x)) for x in X]
 
 
 class Twotagging_Dataset(Abstract_dataset):

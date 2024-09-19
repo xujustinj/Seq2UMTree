@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 from overrides import overrides
 
-from openjere.config import SEP_SEMICOLON, SEP_VERTICAL_BAR, EOS, PAD, SOS, NO_RELATION
+from openjere.config import SEP_SEMICOLON, SEP_VERTICAL_BAR, EOS, PAD, SOS
 from openjere.preprocessings.abc_preprocessor import ABC_data_preprocessing
 
 
@@ -56,9 +56,6 @@ class WDec_preprocessing(ABC_data_preprocessing):
 
     @overrides
     def _read_line(self, line: str) -> Optional[str]:
-        line = line.strip("\n")
-        if not line:
-            return None
         instance = json.loads(line)
         text = instance["text"]
 
