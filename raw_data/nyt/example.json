@@ -1,0 +1,10 @@
+{
+  "text": "Massachusetts ASTON MAGNA Great Barrington ; also at Bard College , Annandale-on-Hudson , N.Y. , July 1-Aug .",
+  "spo_list": [
+    {
+      "subject": "Annandale-on-Hudson",
+      "object": "Bard College",
+      "predicate": "/location/location/contains"
+    }
+  ]
+}
