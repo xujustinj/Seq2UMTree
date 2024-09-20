@@ -39,7 +39,6 @@ class Hyper(object):
 
         self.relation_vocab: str
         self.print_epoch: int
-        self.evaluation_epoch: int
         self.max_text_len: int
 
         self.max_decode_len: Optional[int]
