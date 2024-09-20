@@ -1,0 +1,35 @@
+{
+    "dataset": "redocred",
+    "model": "seq2umt",
+    "data_root": "data/redocred/seq2umt_pso",
+    "raw_data_root": "raw_data/redocred",
+    "train": "new_train_data.jsonl",
+    "dev": "new_validate_data.jsonl",
+    "test": "new_test_data.jsonl",
+    "raw_data_list": [
+        "new_test_data.jsonl",
+        "new_train_data.jsonl",
+        "new_validate_data.jsonl"
+    ],
+    "relation_vocab": "relation_vocab.json",
+    "print_epoch": 1,
+    "max_text_len": 1000,
+    "cell_name": "lstm",
+    "emb_size": 768,
+    "rel_emb_size": 192,
+    "bio_emb_size": 192,
+    "hidden_size": 768,
+    "threshold": 0.5,
+    "order": [
+        "predicate",
+        "subject",
+        "object"
+    ],
+    "activation": "tanh",
+    "optimizer": "adam",
+    "epoch_num": 100,
+    "batch_size_train": 32,
+    "batch_size_eval": 400,
+    "seperator": " ",
+    "gpu": 0
+}

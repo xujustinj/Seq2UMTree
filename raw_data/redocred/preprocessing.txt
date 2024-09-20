@@ -1,0 +1,12 @@
+================================================================================
+[train] read 3053 old samples from raw_data/redocred/data/train_revised.json
+[train] successfully converted 577/3053 samples
+[train] wrote 577 new samples to raw_data/redocred/new_train_data.jsonl
+================================================================================
+[validate] read 500 old samples from raw_data/redocred/data/dev_revised.json
+[validate] successfully converted 96/500 samples
+[validate] wrote 96 new samples to raw_data/redocred/new_validate_data.jsonl
+================================================================================
+[test] read 500 old samples from raw_data/redocred/data/test_revised.json
+[test] successfully converted 102/500 samples
+[test] wrote 102 new samples to raw_data/redocred/new_test_data.jsonl

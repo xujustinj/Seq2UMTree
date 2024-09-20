@@ -19,7 +19,10 @@ raw_data/EWebNLG/data/webnlg/raw/*
 # raw_data/saoke/SAOKE_DATA.json
 # new_*
 **.json
+**.jsonl
 **.zip
 **/all_50_schemas
 !experiments/*
 !raw_data/*/example.json
+!raw_data/redocred/rel_info.json
+!raw_data/redocred/sample_old.json
