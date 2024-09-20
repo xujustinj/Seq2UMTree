@@ -61,7 +61,7 @@ class Seq2umt(ABCModel):
         t = text_id = sample.T.cuda(self.gpu)
         B, L = t.shape
         length = sample.length
-        mask = (text_id > 0).float().unsqueeze(dim=-1)
+        mask = (text_id > 0).unsqueeze(dim=-1)
         assert mask.shape == (B, L, 1)
         mask.requires_grad = False
 
@@ -133,7 +133,7 @@ class Encoder(nn.Module):
 
     def forward(self, t: torch.Tensor, length):
         B, L = t.shape
-        mask = (t > 0).float().unsqueeze(dim=-1)
+        mask = (t > 0).unsqueeze(dim=-1)
         mask.requires_grad = False
         assert mask.shape == (B, L, 1)
 
@@ -397,7 +397,7 @@ class Decoder(nn.Module):
         t3_in = in_tuple[in_map[self.order[1]]]
 
         t = sample.T.cuda(self.gpu)
-        mask = (t > 0).float().unsqueeze(dim=-1)
+        mask = (t > 0).unsqueeze(dim=-1)
         mask.requires_grad = False
         assert mask.shape == (B, L, 1)
 
@@ -410,7 +410,7 @@ class Decoder(nn.Module):
     def test_forward(self, sample: Batch_reader, encoder_o, decoder_h) -> List[List[Dict[str, str]]]:
         t = sample.T.cuda(self.gpu)
         B, L = t.shape
-        mask = (t > 0).float().unsqueeze(dim=-1)
+        mask = (t > 0).unsqueeze(dim=-1)
         mask.requires_grad = False
         assert mask.shape == (B, L, 1)
         text = [[self.id2word[c] for c in sent] for sent in t.tolist()]
@@ -423,11 +423,10 @@ class Decoder(nn.Module):
                 decoder_h[1][:, i, :].unsqueeze(1).contiguous(),
             )
             triplets = self.extract_items(
-                sent,
-                t[i, :].unsqueeze(0).contiguous(),
-                mask[i, :].unsqueeze(0).contiguous(),
-                encoder_o[i, :, :].unsqueeze(0).contiguous(),
-                (h, c),
+                sent=sent,
+                mask=mask[i, :].unsqueeze(0).contiguous(),
+                encoder_o=encoder_o[i, :, :].unsqueeze(0).contiguous(),
+                t1_h=(h, c),
             )
             result.append(triplets)
         return result
@@ -465,9 +464,8 @@ class Decoder(nn.Module):
         return inp
 
     def extract_items(
-        self, sent, text_id, mask, encoder_o, t1_h
+        self, sent, mask, encoder_o, t1_h
     ) -> List[Dict[str, str]]:
-
         R = []
 
         sos = self.sos(torch.tensor(0).cuda(self.gpu)).unsqueeze(0).unsqueeze(1)

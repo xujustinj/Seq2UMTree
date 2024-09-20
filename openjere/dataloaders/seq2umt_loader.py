@@ -6,7 +6,7 @@ import os
 import numpy as np
 import torch
 
-from openjere.config import seq_padding
+from openjere.config import Hyper, seq_padding
 from .abc_dataset import Abstract_dataset, PartialDataLoader
 
 
@@ -18,8 +18,7 @@ def sort_all(batch, lens):
 
 
 class Seq2umt_Dataset(Abstract_dataset):
-    def __init__(self, hyper, dataset):
-
+    def __init__(self, hyper: Hyper, dataset: str):
         super(Seq2umt_Dataset, self).__init__(hyper, dataset)
 
         self.spo_list = []

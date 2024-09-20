@@ -5,9 +5,11 @@ from typing import Any, Callable, Optional
 
 from torch.utils.data import Dataset, DataLoader
 
+from openjere.config import Hyper
+
 
 class Abstract_dataset(ABC, Dataset):
-    def __init__(self, hyper, dataset):
+    def __init__(self, hyper: Hyper, dataset: str):
         self.hyper = hyper
         self.data_root = hyper.data_root
 

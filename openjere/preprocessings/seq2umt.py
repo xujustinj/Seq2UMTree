@@ -272,9 +272,9 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
         print("Override gen_all_data: Different formats of train/dev!")
 
         for path in self.hyper.raw_data_list:
-            if path == "train_data.json":
+            if path in ("train_data.json", "train_data.jsonl"):
                 self.gen_train_data(path)
-            elif path == "new_train_data.json":
+            elif path in ("new_train_data.json", "new_train_data.jsonl"):
                 self.gen_train_data(path)
             else:
                 self._gen_one_data(path)
