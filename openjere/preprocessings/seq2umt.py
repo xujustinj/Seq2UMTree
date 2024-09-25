@@ -106,10 +106,10 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
         # subject = spo["subject"]
 
         # predicate_id = self.relation_vocab[predicate]
-        def find(tokens: List[str], entity: List[str]):
+        def find(tokens: List[str], entity: List[str]) -> int:
             # Python program for KMP Algorithm
             # https://www.geeksforgeeks.org/python-program-for-kmp-algorithm-for-pattern-searching-2/
-            def KMPSearch(pat, txt):
+            def KMPSearch(pat, txt) -> List[int]:
                 M = len(pat)
                 N = len(txt)
 
@@ -144,10 +144,10 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
                             i += 1
                 return result
 
-            def computeLPSArray(pat, M, lps):
+            def computeLPSArray(pat, M: int, lps: List[int]):
                 len = 0  # length of the previous longest prefix suffix
 
-                lps[0]  # lps[0] is always 0
+                assert lps[0] == 0
                 i = 1
 
                 # the loop calculates lps[i] for i = 1 to M-1
@@ -189,31 +189,22 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
             ent1: List[Literal[0, 1]] = [0] * len(tokens)
             ent2: List[Literal[0, 1]] = [0] * len(tokens)
             for name in outp:
-                id = find(tokens, self.hyper.tokenizer(name))
+                name_tokens = self.hyper.tokenizer(name)
+                id = find(tokens, name_tokens)
                 ent1[id] = 1
-                ent2[id + len(self.hyper.tokenizer(name)) - 1] = 1
+                ent2[id + len(name_tokens) - 1] = 1
             return ent1, ent2
 
         def to_in_key(inp: Optional[str], name: ComponentName) -> Union[int, Tuple[int, int]]:
             if not inp:
-                return 0, 0
+                return -1, -1
             elif name == "predicate":
                 return self.relation_vocab[inp]
             else:
-                k1 = find(tokens, self.hyper.tokenizer(inp))
-                k2 = k1 + len(self.hyper.tokenizer(inp)) - 1
+                inp_tokens = self.hyper.tokenizer(inp)
+                k1 = find(tokens, inp_tokens)
+                k2 = k1 + len(inp_tokens) - 1
                 return k1, k2
-
-        op_dic: Dict[
-            ComponentName,
-            Callable[
-                [List[str]],
-                Union[
-                    List[Literal[0, 1]],
-                    Tuple[List[Literal[0, 1]], List[Literal[0, 1]]]
-                ]
-            ]
-        ] = {"predicate": to_rel, "subject": to_ent, "object": to_ent}
 
         results: List[Dict[str, Any]] = []
         for t in tree:
@@ -222,17 +213,16 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
             for name, ori_out, ori_in in zip(
                 order, (t1_out, t2_out, t3_out), (t1_in, t2_in, None)
             ):
-                new_out = op_dic[name](ori_out)
                 if name == "predicate":
-                    rel_idx = new_out
+                    rel_idx = to_rel(ori_out)
                     rel_in = to_in_key(ori_in, name)
                 elif name == "subject":
-                    s1, s2 = new_out
+                    s1, s2 = to_ent(ori_out)
                     k = to_in_key(ori_in, name)
                     assert isinstance(k, tuple)
                     s_k1, s_k2 = k
                 elif name == "object":
-                    o1, o2 = new_out
+                    o1, o2 = to_ent(ori_out)
                     k = to_in_key(ori_in, name)
                     assert isinstance(k, tuple)
                     o_k1, o_k2 = k
@@ -272,9 +262,7 @@ class Seq2umt_preprocessing(ABC_data_preprocessing):
         print("Override gen_all_data: Different formats of train/dev!")
 
         for path in self.hyper.raw_data_list:
-            if path in ("train_data.json", "train_data.jsonl"):
-                self.gen_train_data(path)
-            elif path in ("new_train_data.json", "new_train_data.jsonl"):
+            if "train" in path:
                 self.gen_train_data(path)
             else:
                 self._gen_one_data(path)

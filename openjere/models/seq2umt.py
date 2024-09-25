@@ -4,6 +4,7 @@ import os
 from typing import Any, Callable, Dict, List, Tuple
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -29,7 +30,7 @@ class Seq2umt(ABCModel):
         assert isinstance(self.word_vocab, dict)
 
         self.mBCE = MaskedBCE()
-        self.BCE = torch.nn.BCEWithLogitsLoss()
+        self.BCE = nn.BCEWithLogitsLoss()
 
         self.encoder = Encoder(
             len(self.word_vocab), self.hyper.emb_size, self.hyper.hidden_size
@@ -40,10 +41,10 @@ class Seq2umt(ABCModel):
     @staticmethod
     def description(epoch: int, epoch_num: int, output: Dict[str, Any]) -> str:
         loss = output["loss"]
-        assert isinstance(loss, torch.Tensor)
+        assert isinstance(loss, Tensor)
         return f"L: {float(loss.item()):.3f}, epoch: {epoch}/{epoch_num}"
 
-    def run_metrics(self, output):
+    def run_metrics(self, output: Dict[str, Any]):
         # # whole triplet
         self.metrics(
             output["decode_result"], output["spo_gold"],
@@ -56,6 +57,48 @@ class Seq2umt(ABCModel):
         # self.metrics(output["decode_result"], output["spo_gold"], get_seq=lambda dic: (dic["predicate"], dic["subject"]))
 
     def forward(self, sample: Batch_reader, is_train: bool) -> Dict[str, Any]:
+        # print("-" * 80)
+        # print("orig_idx", sample.orig_idx)
+        # print("length", sample.length)
+        # print("T", sample.T.shape, [len(text) for text in sample.text])
+        # assert sample.S1.shape == sample.S2.shape
+        # s1 = sample.S1.nonzero()
+        # s2 = sample.S2.nonzero()
+        # assert s1.shape == s2.shape
+        # print("S1,S2", sample.S1.shape)
+        # for (bi, i), (bj, j) in zip(s1.tolist(), s2.tolist()):
+        #     assert bi == bj
+        #     assert i <= j
+        #     print(f"\t{bi}\t{i}-{j} {' '.join(sample.text[bi][i:j+1])}")
+        # assert sample.O1.shape == sample.O2.shape
+        # o1 = sample.O1.nonzero()
+        # o2 = sample.O2.nonzero()
+        # assert o1.shape == o2.shape
+        # print("O1,O2", sample.O1.shape)
+        # for (bi, i), (bj, j) in zip(s1.tolist(), s2.tolist()):
+        #     assert bi == bj
+        #     assert i <= j
+        #     print(f"\t{bi}\t{i}-{j}\t{' '.join(sample.text[bi][i:j+1])}")
+        # print("R_gt", sample.R_gt.shape)
+        # for b, r in sample.R_gt.nonzero().tolist():
+        #     print(f"\t{b}\t{r}\t{self.hyper.id2rel[r]}")
+        # print("R_in", sample.R_in.shape, sample.R_in)
+        # print("S_K1_in", sample.S_K1_in.shape, sample.S_K1_in)
+        # print("S_K2_in", sample.S_K2_in.shape, sample.S_K2_in)
+        # for b, (i, j) in enumerate(zip(sample.S_K1_in.tolist(), sample.S_K2_in.tolist())):
+        #     assert i <= j
+        #     if i < 0:
+        #         assert i == j == -1
+        #         break
+        #     print(f"\t{b}\t{i}-{j}\t{' '.join(sample.text[b][i:j+1])}")
+        # print("O_K1_in", sample.O_K1_in.shape, sample.O_K1_in)
+        # print("O_K2_in", sample.O_K2_in.shape, sample.O_K2_in)
+        # for b, (i, j) in enumerate(zip(sample.O_K1_in.tolist(), sample.O_K2_in.tolist())):
+        #     assert i <= j
+        #     if i < 0:
+        #         assert i == j == -1
+        #         break
+        #     print(f"\t{b}\t{i}-{j}\t{' '.join(sample.text[b][i:j+1])}")
         output: Dict[str, Any] = {"text": list(map(self.hyper.join, sample.text))}
 
         t = text_id = sample.T.cuda(self.gpu)
@@ -65,8 +108,6 @@ class Seq2umt(ABCModel):
         assert mask.shape == (B, L, 1)
         mask.requires_grad = False
 
-        rel_gt = sample.R_gt.cuda(self.gpu)
-
         head_gt1 = sample.S1.cuda(self.gpu)
         head_gt2 = sample.S2.cuda(self.gpu)
 
@@ -74,10 +115,12 @@ class Seq2umt(ABCModel):
         tail_gt2 = sample.O2.cuda(self.gpu)
 
         o, h = self.encoder(t, length)
+        # print("o", o.shape)
+        # h0, h1 = h
+        # print("h", h0.shape, h1.shape)
 
         if is_train:
-
-            t_outs = self.decoder.train_forward(sample, o, h)
+            t_outs: Tuple[Any, Any, Any] = self.decoder.train_forward(sample, o, h)
 
             out_map = dict(zip(self.order, (0, 1, 2)))
 
@@ -85,6 +128,7 @@ class Seq2umt(ABCModel):
             head_out1, head_out2 = t_outs[out_map["subject"]]
             tail_out1, tail_out2 = t_outs[out_map["object"]]
 
+            rel_gt = sample.R_gt.cuda(self.gpu)
             rel_loss = self.BCE(rel_out, rel_gt)
             head_loss = self.mBCE(head_out1, head_gt1, mask) + self.mBCE(
                 head_out2, head_gt2, mask
@@ -131,7 +175,7 @@ class Encoder(nn.Module):
             nn.ReLU().cuda(),
         )
 
-    def forward(self, t: torch.Tensor, length):
+    def forward(self, t: Tensor, length: Tensor) -> Tuple[Tensor, Tuple[Tensor, Tensor]]:
         B, L = t.shape
         mask = (t > 0).unsqueeze(dim=-1)
         mask.requires_grad = False
@@ -144,8 +188,8 @@ class Encoder(nn.Module):
 
         seq, (h_n, c_n) = self.lstm(seq, None)
         assert isinstance(seq, torch.nn.utils.rnn.PackedSequence)
-        assert isinstance(h_n, torch.Tensor)
-        assert isinstance(c_n, torch.Tensor)
+        assert isinstance(h_n, Tensor)
+        assert isinstance(c_n, Tensor)
         t1, _ = nn.utils.rnn.pad_packed_sequence(seq, batch_first=True, total_length=L)
 
         t_max = seq_max_pool(t1, mask)
@@ -154,7 +198,7 @@ class Encoder(nn.Module):
 
         o = o.permute(0, 2, 1)
         o = self.conv1(o)
-        assert isinstance(o, torch.Tensor)
+        assert isinstance(o, Tensor)
         o = o.permute(0, 2, 1)
 
         h_n = torch.cat((h_n[0], h_n[1]), dim=-1).unsqueeze(0)
@@ -295,9 +339,9 @@ class Decoder(nn.Module):
 
         return output, attn, hidden
 
-    def to_rel(self, input, h, encoder_o, mask: torch.Tensor):
+    def to_rel(self, input, h, encoder_o, mask: Tensor):
         output, attn, h = self.forward_step(input, h, encoder_o)
-        new_encoder_o: torch.Tensor = seq_and_vec([encoder_o, output.squeeze(1)])
+        new_encoder_o: Tensor = seq_and_vec([encoder_o, output.squeeze(1)])
 
         new_encoder_o = new_encoder_o.permute(0, 2, 1)
         new_encoder_o = self.conv2_to_1_rel(new_encoder_o)
@@ -310,7 +354,7 @@ class Decoder(nn.Module):
 
         return output, h, new_encoder_o, attn
 
-    def to_ent(self, input, h, encoder_o, mask: torch.Tensor):
+    def to_ent(self, input, h, encoder_o, mask: Tensor):
         # TODO mask
         output, attn, h = self.forward_step(input, h, encoder_o)
         output = output.squeeze(1)
@@ -331,12 +375,12 @@ class Decoder(nn.Module):
 
         return output, h, new_encoder_o, attn
 
-    def sos2ent(self, sos, encoder_o, h, mask: torch.Tensor):
+    def sos2ent(self, sos, encoder_o, h, mask: Tensor):
         input = sos
         out, h, new_encoder_o, attn = self.to_ent(input, h, encoder_o, mask)
         return out, h, new_encoder_o
 
-    def ent2rel(self, t_in, encoder_o, h, mask: torch.Tensor):
+    def ent2rel(self, t_in, encoder_o, h, mask: Tensor):
         # TODO: test
         k1, k2 = t_in
         k1 = seq_gather([encoder_o, k1])
@@ -349,7 +393,7 @@ class Decoder(nn.Module):
 
         return out, h, new_encoder_o
 
-    def sos2rel(self, sos, encoder_o, h, mask: torch.Tensor):
+    def sos2rel(self, sos, encoder_o, h, mask: Tensor):
         # t1
         input = sos
         t1_out, h, new_encoder_o, attn = self.to_rel(input, h, encoder_o, mask)
@@ -357,14 +401,14 @@ class Decoder(nn.Module):
 
         return t1_out, h, new_encoder_o
 
-    def rel2ent(self, t2_in, encoder_o, h, mask: torch.Tensor):
+    def rel2ent(self, t2_in, encoder_o, h, mask: Tensor):
         # t2
         input = self.rel_emb(t2_in)
         input = input.unsqueeze(1)
         t2_out, h, new_encoder_o, attn = self.to_ent(input, h, encoder_o, mask)
         return t2_out, h, new_encoder_o
 
-    def ent2ent(self, t3_in, encoder_o, h, mask: torch.Tensor):
+    def ent2ent(self, t3_in, encoder_o, h, mask: Tensor):
         # t3
         k1, k2 = t3_in
         k1 = seq_gather([encoder_o, k1])
@@ -375,9 +419,9 @@ class Decoder(nn.Module):
         t3_out, h, new_encoder_o, attn = self.to_ent(input, h, encoder_o, mask)
         return t3_out, h, new_encoder_o
 
-    def train_forward(self, sample: Batch_reader, encoder_o, h):
+    def train_forward(self, sample: Batch_reader, encoder_o, h: Tuple[Tensor, Tensor]):
         B, L = sample.T.shape
-        sos = (
+        sos: Tensor = (
             self.sos(torch.tensor(0).cuda(self.gpu))
                 .unsqueeze(0)
                 .expand(B, -1)
@@ -386,8 +430,14 @@ class Decoder(nn.Module):
         t1_in = sos
 
         r_in = sample.R_in.cuda(self.gpu)
-        s_in = sample.S_K1_in.cuda(self.gpu), sample.S_K2_in.cuda(self.gpu)
-        o_in = sample.O_K1_in.cuda(self.gpu), sample.O_K2_in.cuda(self.gpu)
+        s_in = (
+            sample.S_K1_in.cuda(self.gpu).unsqueeze(dim=-1),
+            sample.S_K2_in.cuda(self.gpu).unsqueeze(dim=-1),
+        )
+        o_in = (
+            sample.O_K1_in.cuda(self.gpu).unsqueeze(dim=-1),
+            sample.O_K2_in.cuda(self.gpu).unsqueeze(dim=-1),
+        )
 
         in_tuple = (r_in, s_in, o_in)
 
@@ -475,7 +525,6 @@ class Decoder(nn.Module):
         t1_id, t1_name = self.decode_state_map[0](sent, t1_out)
 
         for id1, name1 in zip(t1_id, t1_name):
-
             t2_in = self._out2in(id1, self.order[0])
             t2_out, t2_h, t2_encoder_o = self.state_map[1](
                 t2_in, t1_encoder_o, t1_h, mask

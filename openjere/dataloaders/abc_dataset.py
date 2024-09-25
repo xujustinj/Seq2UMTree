@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import json
 import os
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 from torch.utils.data import Dataset, DataLoader
 
@@ -13,10 +13,10 @@ class Abstract_dataset(ABC, Dataset):
         self.hyper = hyper
         self.data_root = hyper.data_root
 
-        self.word_vocab = json.load(
+        self.word_vocab: Dict[str, int] = json.load(
             open(os.path.join(self.data_root, "word_vocab.json"), "r", encoding="utf-8")
         )
-        self.relation_vocab = json.load(
+        self.relation_vocab: Dict[str, int] = json.load(
             open(
                 os.path.join(self.data_root, "relation_vocab.json"),
                 "r",
@@ -46,11 +46,13 @@ class PartialDataLoader:
             dataset: Abstract_dataset,
             batch_size: Optional[int] = 1,
             num_workers: int = 0,
+            shuffle: Optional[bool] = None,
     ) -> DataLoader:
         return DataLoader(
             dataset=dataset,
             collate_fn=(lambda x: self._batch_reader(x)),
             batch_size=batch_size,
             num_workers=num_workers,
+            shuffle=shuffle,
             pin_memory=True,
         )

@@ -1,4 +1,3 @@
-import argparse
 from collections import Counter
 import logging
 import os
@@ -245,6 +244,7 @@ class Runner(object):
             train_set,
             batch_size=self.hyper.batch_size_train,
             num_workers=8,
+            shuffle=True,
         )
         dev_set = self.Dataset(self.hyper, self.hyper.dev)
         dev_loader = self.Loader(
@@ -292,6 +292,12 @@ class Runner(object):
 
 
 if __name__ == "__main__":
+    import argparse
+    import random
+
+    random.seed(0)
+    torch.random.manual_seed(0)
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--exp_name",
