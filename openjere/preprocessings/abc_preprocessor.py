@@ -25,16 +25,11 @@ class ABC_data_preprocessing(ABC):
         if not os.path.exists(self.data_root):
             os.makedirs(self.data_root)
 
-        self.relation_vocab_path = os.path.join(self.data_root, hyper.relation_vocab)
-
     @cached_property
     def relation_vocab(self) -> Dict[str, int]:
-        if not os.path.exists(self.relation_vocab_path):
+        if not os.path.exists(self.hyper.relation_vocab_path):
             self.gen_relation_vocab()
-        with open(self.relation_vocab_path, "r", encoding="utf-8") as f:
-            vocab = json.load(f)
-        assert isinstance(vocab, dict)
-        return vocab
+        return self.hyper.rel2id
 
     # model
     @abstractmethod
@@ -55,9 +50,8 @@ class ABC_data_preprocessing(ABC):
     def _gen_one_data(self, dataset):
         source = os.path.join(self.raw_data_root, dataset)
         target = os.path.join(self.data_root, dataset)
-        with open(source, "r", encoding="utf-8") as s, open(
-            target, "w", encoding="utf-8"
-        ) as t:
+        with open(source, "r", encoding="utf-8") as s,\
+            open(target, "w", encoding="utf-8") as t:
             for line in s:
                 line = line.strip("\n")
                 if line == "":
@@ -70,7 +64,8 @@ class ABC_data_preprocessing(ABC):
     # model
     def gen_bio_vocab(self):
         result = {PAD: 3, "B": 0, "I": 1, "O": 2}
-        json.dump(result, open(os.path.join(self.data_root, "bio_vocab.json"), "w"))
+        with open(self.hyper.bio_vocab_path, "w") as f:
+            json.dump(result, f)
 
     def gen_vocab(
         self,
@@ -84,7 +79,7 @@ class ABC_data_preprocessing(ABC):
     ):
         # might contain sos, eos, pad ....
         source = os.path.join(self.raw_data_root, self.hyper.train)
-        target = os.path.join(self.data_root, "word_vocab.json")
+        target = self.hyper.word_vocab_path
 
         cnt = Counter()
 
@@ -100,7 +95,8 @@ class ABC_data_preprocessing(ABC):
                 i += 1
         result[OOV] = i
         assert len(result) == i + 1
-        json.dump(result, open(target, "w", encoding="utf-8"), ensure_ascii=False)
+        with open(self.hyper.word_vocab_path, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False)
 
     def spo_to_entities(self, text: str, spo_list: List[Dict[str, str]]) -> List[str]:
         entities = set(t["object"] for t in spo_list) | set(
@@ -121,7 +117,7 @@ class ABC_data_preprocessing(ABC):
 
         relation_vocab = {k: v for v, k in enumerate(rel_set)}
         relation_vocab[NO_RELATION] = len(relation_vocab)
-        with open(self.relation_vocab_path, "w", encoding="utf-8") as f:
+        with open(self.hyper.relation_vocab_path, "w", encoding="utf-8") as f:
             json.dump(relation_vocab, f, ensure_ascii=False)
 
     def yield_key(self, source: str, key: str):

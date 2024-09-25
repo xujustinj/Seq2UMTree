@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from openjere.models.abc_model import ABCModel
+from openjere.config import Hyper
 from openjere.config.const import *
 
 
@@ -163,14 +164,6 @@ class Attention(nn.Module):
         attn_weights.data.masked_fill_(src_mask.data, -float("inf"))
         attn_weights = F.softmax(attn_weights, dim=-1)
 
-        # print(attn_weights)
-        # print(src_mask)
-        # print(torch.sum(attn_weights != attn_weights).any())
-        # print('-----')
-
-        # if torch.sum(attn_weights != attn_weights).any() > 0:
-        #     exit()
-
         ctx = torch.bmm(attn_weights.unsqueeze(1), enc_hs).squeeze()
         return ctx, attn_weights
 
@@ -211,27 +204,18 @@ class Decoder(nn.Module):
 
 
 class WDec(ABCModel):
-    def __init__(self, hyper):
+    def __init__(self, hyper: Hyper):
         super(WDec, self).__init__()
         self.hyper = hyper
         self.data_root = hyper.data_root
         self.gpu = hyper.gpu
 
-        self.word_vocab = json.load(
-            open(os.path.join(self.data_root, "word_vocab.json"), "r", encoding="utf-8")
-        )
-        self.relation_vocab = json.load(
-            open(
-                os.path.join(self.data_root, "relation_vocab.json"),
-                "r",
-                encoding="utf-8",
-            )
-        )
+        self.word_vocab = hyper.word2id
+        self.relation_vocab = hyper.rel2id
         self.rev_vocab = {v: k for k, v in self.word_vocab.items()}
 
         self.word_embeddings = nn.Embedding(len(self.word_vocab), self.hyper.emb_size)
 
-        # self.word_embeddings = WordEmbeddings(len(word_vocab), word_embed_dim, word_embed_matrix, drop_rate)
         self.encoder = Encoder(
             enc_inp_size, int(enc_hidden_size / 2), layers, True, drop_rate
         )
@@ -246,7 +230,6 @@ class WDec(ABCModel):
         self.criterion = nn.NLLLoss(ignore_index=0)
 
     def forward(self, sample, is_train: bool) -> Dict[str, torch.Tensor]:
-
         src_words_seq = sample.tokens_id.cuda(self.gpu)
         # src_chars_seq = sample.src_chars_seq
         src_mask = sample.src_words_mask.cuda(self.gpu)
@@ -361,13 +344,6 @@ class WDec(ABCModel):
                 result.append(decoded_triplets)
             output["decode_result"] = result
             output["seq"] = seq
-
-            # DEBUG
-            # for gt, pred in zip(output["spo_gold"], output["decode_result"]):
-            #     print([g.values() for g in gt])
-            #     print([p.values() for p in pred])
-            #     print('-'*100)
-            # exit()
 
         return output
 

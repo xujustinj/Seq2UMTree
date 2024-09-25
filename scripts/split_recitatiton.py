@@ -35,9 +35,8 @@ def filter_test(data_root, dataset, cnt, thr: int):
     source = os.path.join(data_root, dataset)
     target = os.path.join(data_root, "filter_" + str(thr) + "_" + dataset)
     write_linenum = 0
-    with open(source, "r", encoding="utf-8") as s, open(
-        target, "w", encoding="utf-8"
-    ) as t:
+    with open(source, "r", encoding="utf-8") as s, \
+        open(target, "w", encoding="utf-8") as t:
         for all_linenum, line in enumerate(s):
             jline = json.loads(line)
             spo_list = jline["spo_list"]
@@ -53,9 +52,8 @@ def filter_test_num(data_root, dataset, cnt, thr: int, num: int, fn):
     source = os.path.join(data_root, dataset)
     target = os.path.join(data_root, "new" + str(thr) + "_" + str(num) + "_" + dataset)
     write_linenum = 0
-    with open(source, "r", encoding="utf-8") as s, open(
-        target, "w", encoding="utf-8"
-    ) as t:
+    with open(source, "r", encoding="utf-8") as s, \
+        open(target, "w", encoding="utf-8") as t:
         for all_linenum, line in enumerate(s):
             jline = json.loads(line)
             spo_list = jline["spo_list"]
@@ -166,9 +164,9 @@ def split_test(data_root):
     ns_set = set()  # unseen
     seen_cnt = 0
     unseen_cnt = 0
-    with open(source, "r", encoding="utf-8") as s, open(
-        target_o, "w", encoding="utf-8"
-    ) as tseen, open(target_no, "w", encoding="utf-8") as tnseen:
+    with open(source, "r", encoding="utf-8") as s, \
+        open(target_o, "w", encoding="utf-8") as tseen, \
+        open(target_no, "w", encoding="utf-8") as tnseen:
 
         for all_linenum, line in enumerate(s):
             jline = json.loads(line)
@@ -189,9 +187,8 @@ def split_train(data_root, s_set):
     source = os.path.join(data_root, "new_train_data.json")
     target_o = os.path.join(data_root, "train_o.json")
     cnt = 0
-    with open(source, "r", encoding="utf-8") as s, open(
-        target_o, "w", encoding="utf-8"
-    ) as t:
+    with open(source, "r", encoding="utf-8") as s, \
+        open(target_o, "w", encoding="utf-8") as t:
         for all_linenum, line in enumerate(s):
             jline = json.loads(line)
             spo_list = list(map(dic2tuple, jline["spo_list"]))

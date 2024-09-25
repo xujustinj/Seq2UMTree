@@ -1,35 +1,27 @@
 import copy
 from functools import partial
-import json
-import os
 from typing import Dict, List
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from openjere.config import PAD, NO_RELATION
+from openjere.config import Hyper, PAD, NO_RELATION
 from openjere.layer.crf import CRF
 from openjere.models.abc_model import ABCModel
 
 
 class MultiHeadSelection(ABCModel):
-    def __init__(self, hyper) -> None:
+    def __init__(self, hyper: Hyper) -> None:
         super(MultiHeadSelection, self).__init__()
 
         self.hyper = hyper
         self.data_root = hyper.data_root
         self.gpu = hyper.gpu
 
-        self.word_vocab = json.load(
-            open(os.path.join(self.data_root, "word_vocab.json"), "r")
-        )
-        self.relation_vocab = json.load(
-            open(os.path.join(self.data_root, "relation_vocab.json"), "r")
-        )
-        self.bio_vocab = json.load(
-            open(os.path.join(self.data_root, "bio_vocab.json"), "r")
-        )
+        self.word_vocab = self.hyper.word2id
+        self.relation_vocab = self.hyper.rel2id
+        self.bio_vocab = self.hyper.bio_vocab
 
         self.word_embeddings = nn.Embedding(
             num_embeddings=len(self.word_vocab), embedding_dim=hyper.emb_size

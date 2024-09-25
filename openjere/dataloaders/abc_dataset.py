@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
-import json
-import os
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 from torch.utils.data import Dataset, DataLoader
 
@@ -13,19 +11,9 @@ class Abstract_dataset(ABC, Dataset):
         self.hyper = hyper
         self.data_root = hyper.data_root
 
-        self.word_vocab: Dict[str, int] = json.load(
-            open(os.path.join(self.data_root, "word_vocab.json"), "r", encoding="utf-8")
-        )
-        self.relation_vocab: Dict[str, int] = json.load(
-            open(
-                os.path.join(self.data_root, "relation_vocab.json"),
-                "r",
-                encoding="utf-8",
-            )
-        )
-        self.bio_vocab = json.load(
-            open(os.path.join(self.data_root, "bio_vocab.json"), "r", encoding="utf-8")
-        )
+        self.word_vocab = hyper.word2id
+        self.relation_vocab = hyper.rel2id
+        self.bio_vocab = hyper.bio_vocab
 
         self.tokenizer = self.hyper.tokenizer
 

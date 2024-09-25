@@ -23,36 +23,16 @@ class WDec_preprocessing(ABC_data_preprocessing):
         )
         target = os.path.join(self.data_root, "word_vocab.json")
 
-        word_vocab = json.load(
-            open(os.path.join(self.data_root, "word_vocab.json"), "r", encoding="utf-8")
-        )
-
-        # print(NO_RELATION in word_vocab)
-
-        # ori_size = len(word_vocab)
-
-        relation_vocab = json.load(
-            open(
-                os.path.join(self.data_root, "relation_vocab.json"),
-                "r",
-                encoding="utf-8",
-            )
-        )
-
-        # rel_size = len(relation_vocab)
-
-        # word_vocab.update(
-        #     {v: i + max(word_vocab.values()) + 1 for i, v in enumerate(relation_vocab.keys())}
-        # )
-        # print(len(word_vocab), rel_size, ori_size)
-        # assert len(word_vocab) == rel_size + ori_size
+        word_vocab = self.hyper.word2id
+        relation_vocab = self.hyper.rel2id
 
         word_vocab = {
             k: i
             for i, k in enumerate(set(word_vocab.keys()) | set(relation_vocab.keys()))
         }
 
-        json.dump(word_vocab, open(target, "w", encoding="utf-8"), ensure_ascii=False)
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(word_vocab, f, ensure_ascii=False)
 
     @overrides
     def _read_line(self, line: str) -> Optional[str]:

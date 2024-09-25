@@ -1,6 +1,4 @@
 from functools import partial
-import json
-import os
 from typing import Any, Callable, Dict, List, Tuple
 
 import torch
@@ -25,9 +23,7 @@ class Seq2umt(ABCModel):
         self.data_root = hyper.data_root
         self.gpu = hyper.gpu
 
-        with open(os.path.join(self.data_root, "word_vocab.json"), "r", encoding="utf-8") as f:
-            self.word_vocab: Dict[str, int] = json.load(f)
-        assert isinstance(self.word_vocab, dict)
+        self.word_vocab = self.hyper.word2id
 
         self.mBCE = MaskedBCE()
         self.BCE = nn.BCEWithLogitsLoss()
@@ -218,13 +214,10 @@ class Decoder(nn.Module):
 
         self.word_vocab = word_vocab
 
-        with open(os.path.join(self.data_root, "relation_vocab.json"), "r", encoding="utf-8") as f:
-            self.relation_vocab: Dict[str, int] = json.load(f)
-        assert isinstance(self.relation_vocab, dict)
-
+        self.relation_vocab = hyper.rel2id
         self.rel_num = len(self.relation_vocab)
-        self.id2word = {v: k for k, v in self.word_vocab.items()}
-        self.id2rel = {v: k for k, v in self.relation_vocab.items()}
+        self.id2word = hyper.id2word
+        self.id2rel = hyper.id2rel
 
         self.lstm1 = nn.LSTM(
             input_size=self.word_emb_size,

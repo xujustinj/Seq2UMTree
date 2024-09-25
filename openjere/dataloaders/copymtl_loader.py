@@ -18,14 +18,15 @@ class Copymtl_Dataset(Abstract_dataset):
         self.bio_list = []
         self.spo_list = []
 
-        for line in open(os.path.join(self.data_root, dataset), "r"):
-            line = line.strip("\n")
-            instance = json.loads(line)
+        with open(os.path.join(self.data_root, dataset), "r") as f:
+            for line in f:
+                line = line.strip("\n")
+                instance = json.loads(line)
 
-            self.seq_list.append(instance["seq"])
-            self.text_list.append(self.hyper.tokenizer(instance["text"]))
-            self.bio_list.append(instance["bio"])
-            self.spo_list.append(instance["spo_list"])
+                self.seq_list.append(instance["seq"])
+                self.text_list.append(self.hyper.tokenizer(instance["text"]))
+                self.bio_list.append(instance["bio"])
+                self.spo_list.append(instance["spo_list"])
 
     def __getitem__(self, index):
 

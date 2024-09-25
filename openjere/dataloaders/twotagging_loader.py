@@ -41,51 +41,52 @@ class Twotagging_Dataset(Abstract_dataset):
             [],
         )
 
-        for line in open(os.path.join(self.data_root, dataset), "r"):
-            line = line.strip("\n")
-            instance = json.loads(line)
+        with open(os.path.join(self.data_root, dataset), "r") as f:
+            for line in f:
+                line = line.strip("\n")
+                instance = json.loads(line)
 
-            text = self.hyper.tokenizer(instance["text"])
-            items = {}
-            for sp in instance["spo_list"]:
-                subjectid = text.find(sp["subject"])
-                objectid = text.find(sp["object"])
-                if subjectid != -1 and objectid != -1:
-                    key = (subjectid, subjectid + len(sp["subject"]))
-                    if key not in items:
-                        items[key] = []
-                    items[key].append(
-                        (
-                            objectid,
-                            objectid + len(sp["object"]),
-                            self.relation_vocab[sp["predicate"]],
+                text = self.hyper.tokenizer(instance["text"])
+                items = {}
+                for sp in instance["spo_list"]:
+                    subjectid = text.find(sp["subject"])
+                    objectid = text.find(sp["object"])
+                    if subjectid != -1 and objectid != -1:
+                        key = (subjectid, subjectid + len(sp["subject"]))
+                        if key not in items:
+                            items[key] = []
+                        items[key].append(
+                            (
+                                objectid,
+                                objectid + len(sp["object"]),
+                                self.relation_vocab[sp["predicate"]],
+                            )
                         )
-                    )
-            if items:
-                self.text_list.append(self.hyper.tokenizer(instance["text"]))
-                self.spo_list.append(instance["spo_list"])
-                text_id = [
-                    self.word_vocab.get(c, self.word_vocab["<oov>"]) for c in text
-                ]
-                self.T.append(text_id)
-                s1, s2 = [0] * len(text), [0] * len(text)
-                for j in items:
+                if items:
+                    self.text_list.append(self.hyper.tokenizer(instance["text"]))
+                    self.spo_list.append(instance["spo_list"])
+                    text_id = [
+                        self.word_vocab.get(c, self.word_vocab["<oov>"]) for c in text
+                    ]
+                    self.T.append(text_id)
+                    s1, s2 = [0] * len(text), [0] * len(text)
+                    for j in items:
 
-                    s1[j[0]] = 1
-                    s2[j[1] - 1] = 1
+                        s1[j[0]] = 1
+                        s2[j[1] - 1] = 1
 
-                k1, k2 = choice(list(items.keys()))
-                # TODO: not sure about unk class
-                o1, o2 = [0] * len(text), [0] * len(text)  # 0是unk类（共49+1个类）
-                for j in items[(k1, k2)]:
-                    o1[j[0]] = j[2]
-                    o2[j[1] - 1] = j[2]
-                self.S1.append(s1)
-                self.S2.append(s2)
-                self.K1.append([k1])
-                self.K2.append([k2 - 1])
-                self.O1.append(o1)
-                self.O2.append(o2)
+                    k1, k2 = choice(list(items.keys()))
+                    # TODO: not sure about unk class
+                    o1, o2 = [0] * len(text), [0] * len(text)  # 0是unk类（共49+1个类）
+                    for j in items[(k1, k2)]:
+                        o1[j[0]] = j[2]
+                        o2[j[1] - 1] = j[2]
+                    self.S1.append(s1)
+                    self.S2.append(s2)
+                    self.K1.append([k1])
+                    self.K2.append([k2 - 1])
+                    self.O1.append(o1)
+                    self.O2.append(o2)
 
         self.T = np.array(seq_padding(self.T))
         self.S1 = np.array(seq_padding(self.S1))

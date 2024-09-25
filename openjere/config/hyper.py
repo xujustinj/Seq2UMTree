@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from functools import cached_property
 import json
 import os
+from typing import Dict, List, Literal, Optional, Tuple
 
-from typing import List, Literal, Optional, Tuple
 
 ModelName = Literal[
     "selection",
@@ -60,7 +61,8 @@ class Hyper(object):
         self.seperator: str
         self.gpu: int
 
-        self.__dict__ = json.load(open(path, "r"))
+        with open(path, "r") as f:
+            self.__dict__ = json.load(f)
 
         o1: ComponentName
         o2: ComponentName
@@ -71,23 +73,50 @@ class Hyper(object):
         assert isinstance(o3, str)
         self.order: Tuple[ComponentName, ComponentName, ComponentName] = (o1, o2, o3)
 
-    def vocab_init(self):
-        self.word2id = json.load(
-            open(os.path.join(self.data_root, "word_vocab.json"), "r", encoding="utf-8")
-        )
-        self.rel2id = json.load(
-            open(
-                os.path.join(self.data_root, "relation_vocab.json"),
-                "r",
-                encoding="utf-8",
-            )
-        )
-        self.bio_vocab = json.load(
-            open(os.path.join(self.data_root, "bio_vocab.json"), "r", encoding="utf-8")
-        )
-        self.id2word = {k: v for v, k in self.word2id.items()}
-        self.id2rel = {k: v for v, k in self.rel2id.items()}
-        self.id2bio = {k: v for v, k in self.bio_vocab.items()}
+    @property
+    def word_vocab_path(self) -> str:
+        return os.path.join(self.data_root, "word_vocab.json")
+
+    @cached_property
+    def word2id(self) -> Dict[str, int]:
+        with open(self.word_vocab_path, "r", encoding="utf-8") as f:
+            word2id = json.load(f)
+        assert isinstance(word2id, dict)
+        return word2id
+
+    @property
+    def relation_vocab_path(self) -> str:
+        return os.path.join(self.data_root, "relation_vocab.json")
+
+    @cached_property
+    def rel2id(self) -> Dict[str, int]:
+        with open(self.relation_vocab_path, "r", encoding="utf-8") as f:
+            rel2id = json.load(f)
+        assert isinstance(rel2id, dict)
+        return rel2id
+
+    @property
+    def bio_vocab_path(self) -> str:
+        return os.path.join(self.data_root, "bio_vocab.json")
+
+    @cached_property
+    def bio_vocab(self) -> Dict[str, int]:
+        with open(self.bio_vocab_path, "r", encoding="utf-8") as f:
+            bio_vocab = json.load(f)
+        assert isinstance(bio_vocab, dict)
+        return bio_vocab
+
+    @cached_property
+    def id2word(self) -> Dict[int, str]:
+        return {k: v for v, k in self.word2id.items()}
+
+    @cached_property
+    def id2rel(self) -> Dict[int, str]:
+        return {k: v for v, k in self.rel2id.items()}
+
+    @cached_property
+    def id2bio(self) -> Dict[int, str]:
+        return {k: v for v, k in self.bio_vocab.items()}
 
     def join(self, toks: List[str]) -> str:
         if self.seperator == "":

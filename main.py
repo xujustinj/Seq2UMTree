@@ -128,13 +128,11 @@ class Runner(object):
             self.preprocessing()
 
         elif mode == "train":
-            self.hyper.vocab_init()
             self._init_model()
             self._init_optimizer()
             self.train()
 
         elif mode == "evaluation":
-            self.hyper.vocab_init()
             self._init_model()
             self.load_model("best")
             test_set = self.Dataset(self.hyper, self.hyper.test)
@@ -148,11 +146,9 @@ class Runner(object):
             print("f1 = ", f1)
 
         elif mode == "data_summary":
-            self.hyper.vocab_init()
             self.summary_data(self.hyper.test)
 
         elif mode == "model_summary":
-            self.hyper.vocab_init()
             self._init_model()
             self.load_model("best")
             parameter_num = np.sum([p.numel() for p in self.model.parameters()]).item()
@@ -160,7 +156,6 @@ class Runner(object):
             print(parameter_num)
 
         elif mode == "subevaluation":
-            self.hyper.vocab_init()
             self._init_model()
             self.load_model("best")
             for data in self.hyper.subsets:
@@ -175,7 +170,6 @@ class Runner(object):
                 print("f1 = ", f1)
 
         elif mode == "debug":
-            self.hyper.vocab_init()
             train_set = self.Dataset(self.hyper, self.hyper.dev)
             loader = self.Loader(
                 train_set,
@@ -285,7 +279,7 @@ class Runner(object):
                     score = new_score
                     best_epoch = epoch
                     self.save_model("best")
-        logging.info("best epoch: %d \t F1 = %.2f" % (best_epoch, score))
+        logging.info(f"best epoch: {best_epoch}\tvalidation F1 = {score:.3f}")
         self.load_model("best")
         new_score, log = self.evaluation(test_loader)
         logging.info(log)

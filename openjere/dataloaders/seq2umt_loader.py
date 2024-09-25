@@ -42,47 +42,48 @@ class Seq2umt_Dataset(Abstract_dataset):
 
         oov_token = self.word_vocab["<oov>"]
 
-        for line in open(os.path.join(self.data_root, dataset), "r", encoding="utf-8"):
-            line = line.strip("\n")
-            instance = assert_type(json.loads(line), dict)
+        with open(os.path.join(self.data_root, dataset), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip("\n")
+                instance = assert_type(json.loads(line), dict)
 
-            text = assert_type(instance["text"], str)
-            spo_list: List[Dict[ComponentName, str]] = assert_type(instance["spo_list"], list)
+                text = assert_type(instance["text"], str)
+                spo_list: List[Dict[ComponentName, str]] = assert_type(instance["spo_list"], list)
 
-            tokens = self.hyper.tokenizer(text)
-            text_id = [self.word_vocab.get(c, oov_token) for c in tokens]
+                tokens = self.hyper.tokenizer(text)
+                text_id = [self.word_vocab.get(c, oov_token) for c in tokens]
 
-            assert len(text_id) > 0
+                assert len(text_id) > 0
 
-            T.append(text_id)
+                T.append(text_id)
 
-            # training
-            r = assert_type(instance.get("r", -1), int)
-            s_k1 = assert_type(instance.get("s_k1", -1), int)
-            s_k2 = assert_type(instance.get("s_k2", -1), int)
-            o_k1 = assert_type(instance.get("o_k1", -1), int)
-            o_k2 = assert_type(instance.get("o_k2", -1), int)
+                # training
+                r = assert_type(instance.get("r", -1), int)
+                s_k1 = assert_type(instance.get("s_k1", -1), int)
+                s_k2 = assert_type(instance.get("s_k2", -1), int)
+                o_k1 = assert_type(instance.get("o_k1", -1), int)
+                o_k2 = assert_type(instance.get("o_k2", -1), int)
 
-            rel_gt: List[int] = assert_type(instance.get("rel_gt", []), list)
-            s1_gt: List[int] = assert_type(instance.get("s1_gt", []), list)
-            s2_gt: List[int] = assert_type(instance.get("s2_gt", []), list)
-            o1_gt: List[int] = assert_type(instance.get("o1_gt", []), list)
-            o2_gt: List[int] = assert_type(instance.get("o2_gt", []), list)
+                rel_gt: List[int] = assert_type(instance.get("rel_gt", []), list)
+                s1_gt: List[int] = assert_type(instance.get("s1_gt", []), list)
+                s2_gt: List[int] = assert_type(instance.get("s2_gt", []), list)
+                o1_gt: List[int] = assert_type(instance.get("o1_gt", []), list)
+                o2_gt: List[int] = assert_type(instance.get("o2_gt", []), list)
 
-            self.text_list.append(tokens)
-            self.spo_list.append(spo_list)
+                self.text_list.append(tokens)
+                self.spo_list.append(spo_list)
 
-            R_in.append(r)
-            S_K1_in.append(s_k1)
-            S_K2_in.append(s_k2)
-            O_K1_in.append(o_k1)
-            O_K2_in.append(o_k2)
+                R_in.append(r)
+                S_K1_in.append(s_k1)
+                S_K2_in.append(s_k2)
+                O_K1_in.append(o_k1)
+                O_K2_in.append(o_k2)
 
-            S1.append(s1_gt)
-            S2.append(s2_gt)
-            O1.append(o1_gt)
-            O2.append(o2_gt)
-            R_gt.append(rel_gt)
+                S1.append(s1_gt)
+                S2.append(s2_gt)
+                O1.append(o1_gt)
+                O2.append(o2_gt)
+                R_gt.append(rel_gt)
 
         self.T = np.array(seq_padding(T))
 
