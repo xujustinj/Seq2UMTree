@@ -86,17 +86,6 @@ class Hyper:
         assert isinstance(rel2id, dict)
         return rel2id
 
-    @property
-    def bio_vocab_path(self) -> str:
-        return os.path.join(self.data_root, "bio_vocab.json")
-
-    @cached_property
-    def bio_vocab(self) -> Dict[str, int]:
-        with open(self.bio_vocab_path, "r", encoding="utf-8") as f:
-            bio_vocab = json.load(f)
-        assert isinstance(bio_vocab, dict)
-        return bio_vocab
-
     @cached_property
     def id2word(self) -> Dict[int, str]:
         return {k: v for v, k in self.word2id.items()}
@@ -104,10 +93,6 @@ class Hyper:
     @cached_property
     def id2rel(self) -> Dict[int, str]:
         return {k: v for v, k in self.rel2id.items()}
-
-    @cached_property
-    def id2bio(self) -> Dict[int, str]:
-        return {k: v for v, k in self.bio_vocab.items()}
 
     def join(self, toks: List[str]) -> str:
         if self.seperator == "":

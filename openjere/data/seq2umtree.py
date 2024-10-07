@@ -40,7 +40,6 @@ class Seq2UMTreeDataset(Dataset[Tuple[
 
         self.word_vocab = hyper.word2id
         self.relation_vocab = hyper.rel2id
-        self.bio_vocab = hyper.bio_vocab
 
         self.tokenizer = self.hyper.tokenizer
 

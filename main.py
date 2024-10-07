@@ -65,8 +65,6 @@ class Runner:
         preprocessor.gen_relation_vocab()
         preprocessor.gen_all_data()
         preprocessor.gen_vocab(min_freq=2)
-        # for ner only
-        preprocessor.gen_bio_vocab()
 
     def run(self, mode: str):
         if mode == "preprocessing":

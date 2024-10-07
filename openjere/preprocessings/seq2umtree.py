@@ -5,15 +5,16 @@ import os
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from openjere.config import Hyper, ComponentName
-from openjere.config.const import (
-    PAD,
-    OOV,
-    EOS,
-    SEP_SEMICOLON,
-    NO_RELATION,
-    SEP_VERTICAL_BAR,
-)
 from util.find import find
+
+
+PAD = "<pad>"
+OOV = "<oov>"
+EOS = "<eos>"
+SOS = "<sos>"
+SEP_SEMICOLON = "<;>"
+SEP_VERTICAL_BAR = "<|>"
+NO_RELATION = "<NA>"
 
 
 class Seq2UMTreePreprocessor:
@@ -239,11 +240,6 @@ class Seq2UMTreePreprocessor:
                 if newline is not None:
                     t.write(newline)
                     t.write("\n")
-
-    def gen_bio_vocab(self):
-        result = {PAD: 3, "B": 0, "I": 1, "O": 2}
-        with open(self.hyper.bio_vocab_path, "w") as f:
-            json.dump(result, f)
 
     def gen_vocab(
         self,

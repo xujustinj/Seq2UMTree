@@ -1,7 +1,0 @@
-PAD = "<pad>"
-OOV = "<oov>"
-EOS = "<eos>"
-SOS = "<sos>"
-SEP_SEMICOLON = "<;>"
-SEP_VERTICAL_BAR = "<|>"
-NO_RELATION = "<NA>"
