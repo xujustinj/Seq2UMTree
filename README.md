@@ -1,81 +1,34 @@
-# OpenJERE: Joint Relations and Entities Extraction
+# Seq2UMTree
 
-This is for EMNLP2020 findings paper: [Minimize Exposure Bias of Seq2Seq Models in Joint Entity and Relation Extraction](https://arxiv.org/pdf/2009.07503.pdf)
+> Ranran Haoran Zhang, Qianying Liu, Aysa Xuemo Fan, Heng Ji, Daojian Zeng, Fei Cheng, Daisuke Kawahara, and Sadao Kurohashi.
+> 2020.
+> [Minimize Exposure Bias of Seq2Seq Models in Joint Entity and Relation Extraction](https://aclanthology.org/2020.findings-emnlp.23).
+> In *Findings of the Association for Computational Linguistics: EMNLP 2020*, pages 236–246, Online.
+> Association for Computational Linguistics.
+
+This fork of [`WindChimeRan/OpenJERE`](https://github.com/WindChimeRan/OpenJERE) has been reduced to a minimal reproduction of the Seq2UMTree model introduced in the above paper.
+
+The original repository contains the code for comparing Seq2UMTree against several baselines, but the abstractions involved make it a bit hard to understand the model on its own.
+Here, we remove all code paths unrelated to Seq2UMTree and lightly refactor for readability, including clearer variable names and type annotations.
 
 ## Requirements
 
-* Python 3.7/3.8
-* PyTorch 1.6
+```sh
+conda env create --file=environment.yml
+```
+
+## Data
+
+### EWebNLG
+
+> **TODO**
+
+### NYT-CopyRE
 
 ```sh
-pip install -r requirements.txt
+raw_data/NYT-CopyRE/load.sh
 ```
 
-## Models
+### Re-DocRED
 
-* Multi-Head-Selection [paper](https://arxiv.org/abs/1804.07847)
-* CopyMTL [paper](https://arxiv.org/pdf/1911.10438.pdf)
-* WDec [paper](https://128.84.21.199/pdf/1911.09886.pdf)
-* Seq2UMTree [paper](https://arxiv.org/pdf/2009.07503.pdf)
-
-## Install
-
-```sh
-pip install -e .
-```
-
-## Run
-
-Download the DuIE dataset from [official website](https://ai.baidu.com/broad/introduction?dataset=dureader)
-
-Unzip `*.json` into `./raw_data/chinese/`
-
-For NYT, see [`raw_data/nyt/README.md`](./raw_data/nyt/README.md)
-
-```bash
-cd raw_data
-unzip ../raw_data_joint.zip
-```
-
-Then use the script to download enriched webnlg directly:
-
-```bash
-cd raw_data/EWebNLG
-python data/webnlg/reader.py
-```
-
-Then run data_split for both datasets:
-```bash
-python scripts/data_split.py
-```
-
-```bash
-bash train_all.sh
-```
-
-seperate steps:
-
-```shell
-python main.py --mode preprocessing --exp chinese_seq2umt_ops
-python main.py --mode train --exp chinese_seq2umt_ops
-python main.py --mode evaluation --exp chinese_seq2umt_ops
-```
-
-```shell
-python main.py --mode preprocessing --exp nyt_seq2umt_ops
-python main.py --mode train --exp nyt_seq2umt_ops
-python main.py --mode evaluation --exp nyt_seq2umt_ops
-```
-
-```shell
-python main.py --mode preprocessing --exp nyt_wdec
-python main.py --mode train --exp nyt_wdec
-python main.py --mode evaluation --exp nyt_wdec
-```
-
-<!-- ## EWebNLG
-
-[code](https://github.com/zhijing-jin/WebNLG_Reader)
-[paper](https://www.aclweb.org/anthology/W18-6521.pdf)
-
- -->
+> **TODO**
