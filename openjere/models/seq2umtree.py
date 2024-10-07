@@ -6,14 +6,16 @@ import torch.nn as nn
 
 from openjere.config import Hyper, ComponentName
 from openjere.layer import Attention, MaskedBCE
-from openjere.models.abc_model import ABCModel
+from openjere.metrics import F1Triplet
 from openjere.data.seq2umtree import Seq2UMTreeData
 from util.tensors import seq_max_pool, seq_and_vec, seq_gather
 
 
-class Seq2UMTree(ABCModel):
+class Seq2UMTree(nn.Module):
     def __init__(self, hyper: Hyper):
-        super(Seq2UMTree, self).__init__()
+        super().__init__()
+
+        self.metrics = F1Triplet()
 
         self.hyper = hyper
         self.order = hyper.order
@@ -30,6 +32,9 @@ class Seq2UMTree(ABCModel):
             num_embeddings=1,
             embedding_dim=self.hyper.emb_size,
         )
+
+    def get_metric(self, reset: bool = False) -> Dict[str, float]:
+        return self.metrics.get_metric(reset=reset)
 
     def run_metrics(self, output: Dict[str, Any]):
         # # whole triplet
@@ -62,7 +67,11 @@ class Seq2UMTree(ABCModel):
         o, h = self.encoder.encode(t, length)
 
         if self.training:
-            t_outs: Tuple[Any, Any, Any] = self.decoder.train_forward(sample, o, h)
+            t_outs: Tuple[Any, Any, Any] = self.decoder.train_forward(
+                sample=sample,
+                encoder_o=o,
+                h=h,
+            )
 
             out_map = dict(zip(self.order, (0, 1, 2)))
 
@@ -86,7 +95,11 @@ class Seq2UMTree(ABCModel):
             )
 
         else:
-            result = self.decoder.test_forward(sample, o, h)
+            result = self.decoder.test_forward(
+                sample=sample,
+                encoder_o=o,
+                decoder_h=h,
+            )
             output["decode_result"] = result
             output["spo_gold"] = sample.spo_gold
 
@@ -283,6 +296,7 @@ class Decoder(nn.Module):
 
     def forward_step(
             self,
+            *,
             input_var: Tensor,
             hidden: Tuple[Tensor, Tensor],
             encoder_outputs: Tensor,
@@ -315,7 +329,11 @@ class Decoder(nn.Module):
             encoder_o: Tensor,
             mask: Tensor,
     ) -> Tuple[Tensor, Tuple[Tensor, Tensor], Tensor]:
-        output, attn, h = self.forward_step(input, h, encoder_o)
+        output, attn, h = self.forward_step(
+            input_var=input,
+            hidden=h,
+            encoder_outputs=encoder_o,
+        )
         new_encoder_o: Tensor = seq_and_vec(encoder_o, output.squeeze(1))
 
         new_encoder_o = new_encoder_o.permute(0, 2, 1)
@@ -336,7 +354,11 @@ class Decoder(nn.Module):
             encoder_o: Tensor,
             mask: Tensor,
     ) -> Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor]:
-        output, attn, h = self.forward_step(input, h, encoder_o)
+        output, attn, h = self.forward_step(
+            input_var=input,
+            hidden=h,
+            encoder_outputs=encoder_o,
+        )
         output = output.squeeze(1)
 
         new_encoder_o = seq_and_vec(encoder_o, output)
@@ -424,6 +446,7 @@ class Decoder(nn.Module):
 
     def train_forward(
             self,
+            *,
             sample: Seq2UMTreeData,
             encoder_o: Tensor,
             h: Tuple[Tensor, Tensor],
@@ -464,6 +487,7 @@ class Decoder(nn.Module):
 
     def test_forward(
             self,
+            *,
             sample: Seq2UMTreeData,
             encoder_o: Tensor,
             decoder_h: Tuple[Tensor, Tensor],
@@ -531,6 +555,7 @@ class Decoder(nn.Module):
 
     def extract_items(
         self,
+        *,
         sent: List[str],
         mask: Tensor,
         encoder_o: Tensor,
