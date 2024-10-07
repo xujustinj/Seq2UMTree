@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 
 import torch
 from torch import Tensor
@@ -27,7 +27,7 @@ def seq_and_vec(seq: Tensor, vec: Tensor) -> Tensor:
     return cat
 
 
-def seq_gather(seq: Tensor, idxs: Union[List[int], Tensor]) -> Tensor:
+def seq_gather(seq: Tensor, idxs: Union[list[int], Tensor]) -> Tensor:
     """seq is [None, seq_len, s_size]
     idxs is [None, 1], select idxs[i] vec,
     output is [None, s_size]
@@ -50,7 +50,7 @@ def seq_gather(seq: Tensor, idxs: Union[List[int], Tensor]) -> Tensor:
     return res
 
 
-def seq_padding(X: List[List[int]]) -> List[List[int]]:
+def seq_padding(X: list[list[int]]) -> list[list[int]]:
     L = [len(x) for x in X]
     ML = max(L)
     return [x + [0] * (ML - len(x)) for x in X]

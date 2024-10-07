@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import torch
@@ -84,7 +84,7 @@ class Seq2UMTreeData:
         return self
 
 
-class Seq2UMTreeDataset(Dataset[Tuple[
+class Seq2UMTreeDataset(Dataset[tuple[
     np.ndarray,
     np.ndarray,
     np.ndarray,
@@ -96,9 +96,9 @@ class Seq2UMTreeDataset(Dataset[Tuple[
     np.ndarray,
     np.ndarray,
     np.ndarray,
-    List[str],
+    list[str],
     int,
-    List[Dict[ComponentName, str]],
+    list[dict[ComponentName, str]],
 ]]):
     def __init__(self, config: Seq2UMTreeConfig, dataset: str):
         self.config = config
@@ -109,20 +109,20 @@ class Seq2UMTreeDataset(Dataset[Tuple[
 
         self.tokenizer = self.config.tokenizer
 
-        self.text_list: List[List[str]] = []
-        self.spo_list: List[List[Dict[ComponentName, str]]] = []
+        self.text_list: list[list[str]] = []
+        self.spo_list: list[list[dict[ComponentName, str]]] = []
 
-        T: List[List[int]] = []
-        R_in: List[int] = []
-        S_K1_in: List[int] = []
-        S_K2_in: List[int] = []
-        O_K1_in: List[int] = []
-        O_K2_in: List[int] = []
-        S1: List[List[int]] = []
-        S2: List[List[int]] = []
-        O1: List[List[int]] = []
-        O2: List[List[int]] = []
-        R_gt: List[List[int]] = []
+        T: list[list[int]] = []
+        R_in: list[int] = []
+        S_K1_in: list[int] = []
+        S_K2_in: list[int] = []
+        O_K1_in: list[int] = []
+        O_K2_in: list[int] = []
+        S1: list[list[int]] = []
+        S2: list[list[int]] = []
+        O1: list[list[int]] = []
+        O2: list[list[int]] = []
+        R_gt: list[list[int]] = []
 
         oov_token = self.word_vocab["<oov>"]
 
@@ -132,7 +132,7 @@ class Seq2UMTreeDataset(Dataset[Tuple[
                 instance = assert_type(json.loads(line), dict)
 
                 text = assert_type(instance["text"], str)
-                spo_list: List[Dict[ComponentName, str]] = assert_type(instance["spo_list"], list)
+                spo_list: list[dict[ComponentName, str]] = assert_type(instance["spo_list"], list)
 
                 tokens = self.config.tokenizer(text)
                 text_id = [self.word_vocab.get(c, oov_token) for c in tokens]
@@ -148,11 +148,11 @@ class Seq2UMTreeDataset(Dataset[Tuple[
                 o_k1 = assert_type(instance.get("o_k1", -1), int)
                 o_k2 = assert_type(instance.get("o_k2", -1), int)
 
-                rel_gt: List[int] = assert_type(instance.get("rel_gt", []), list)
-                s1_gt: List[int] = assert_type(instance.get("s1_gt", []), list)
-                s2_gt: List[int] = assert_type(instance.get("s2_gt", []), list)
-                o1_gt: List[int] = assert_type(instance.get("o1_gt", []), list)
-                o2_gt: List[int] = assert_type(instance.get("o2_gt", []), list)
+                rel_gt: list[int] = assert_type(instance.get("rel_gt", []), list)
+                s1_gt: list[int] = assert_type(instance.get("s1_gt", []), list)
+                s2_gt: list[int] = assert_type(instance.get("s2_gt", []), list)
+                o1_gt: list[int] = assert_type(instance.get("o1_gt", []), list)
+                o2_gt: list[int] = assert_type(instance.get("o2_gt", []), list)
 
                 self.text_list.append(tokens)
                 self.spo_list.append(spo_list)
@@ -186,7 +186,7 @@ class Seq2UMTreeDataset(Dataset[Tuple[
         self.O2 = np.array(seq_padding(O2))
         self.R_gt = np.array(R_gt)
 
-    def __getitem__(self, index: int) -> Tuple[
+    def __getitem__(self, index: int) -> tuple[
         np.ndarray,
         np.ndarray,
         np.ndarray,
@@ -198,9 +198,9 @@ class Seq2UMTreeDataset(Dataset[Tuple[
         np.ndarray,
         np.ndarray,
         np.ndarray,
-        List[str],
+        list[str],
         int,
-        List[Dict[ComponentName, str]],
+        list[dict[ComponentName, str]],
     ]:
         text = self.text_list[index]
         return (

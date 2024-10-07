@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Tuple, Optional
+from typing import Optional
 
 import numpy as np
 import torch
@@ -130,7 +130,7 @@ class Runner:
             os.mkdir(self.model_dir)
         torch.save(model.state_dict(), self.model_path(name))
 
-    def evaluation(self, model: Seq2UMTree, loader: Seq2UMTreeDataLoader) -> Tuple[float, str]:
+    def evaluation(self, model: Seq2UMTree, loader: Seq2UMTreeDataLoader) -> tuple[float, str]:
         model.metrics.reset()
         model.eval()
 

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from functools import cached_property
 import json
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import torch
 
@@ -19,8 +19,8 @@ class Seq2UMTreeConfig:
         self.train: str
         self.dev: str
         self.test: str
-        self.subsets: List[str]
-        self.raw_data_list: List[str]
+        self.subsets: list[str]
+        self.raw_data_list: list[str]
 
         self.relation_vocab: str
         self.max_text_len: int
@@ -48,7 +48,7 @@ class Seq2UMTreeConfig:
         assert isinstance(o1, str)
         assert isinstance(o2, str)
         assert isinstance(o3, str)
-        self.order: Tuple[ComponentName, ComponentName, ComponentName] = (o1, o2, o3)
+        self.order: tuple[ComponentName, ComponentName, ComponentName] = (o1, o2, o3)
 
     @cached_property
     def threshold_logit(self) -> float:
@@ -60,7 +60,7 @@ class Seq2UMTreeConfig:
         return os.path.join(self.data_root, "word_vocab.json")
 
     @cached_property
-    def word2id(self) -> Dict[str, int]:
+    def word2id(self) -> dict[str, int]:
         with open(self.word_vocab_path, "r", encoding="utf-8") as f:
             word2id = json.load(f)
         assert isinstance(word2id, dict)
@@ -71,21 +71,21 @@ class Seq2UMTreeConfig:
         return os.path.join(self.data_root, "relation_vocab.json")
 
     @cached_property
-    def rel2id(self) -> Dict[str, int]:
+    def rel2id(self) -> dict[str, int]:
         with open(self.relation_vocab_path, "r", encoding="utf-8") as f:
             rel2id = json.load(f)
         assert isinstance(rel2id, dict)
         return rel2id
 
     @cached_property
-    def id2word(self) -> Dict[int, str]:
+    def id2word(self) -> dict[int, str]:
         return {k: v for v, k in self.word2id.items()}
 
     @cached_property
-    def id2rel(self) -> Dict[int, str]:
+    def id2rel(self) -> dict[int, str]:
         return {k: v for v, k in self.rel2id.items()}
 
-    def join(self, toks: List[str]) -> str:
+    def join(self, toks: list[str]) -> str:
         if self.seperator == "":
             return "".join(toks)
         elif self.seperator == " ":
@@ -93,7 +93,7 @@ class Seq2UMTreeConfig:
         else:
             raise NotImplementedError("other tokenizer?")
 
-    def tokenizer(self, text: str) -> List[str]:
+    def tokenizer(self, text: str) -> list[str]:
         if self.seperator == "":
             return list(text)
         elif self.seperator == " ":

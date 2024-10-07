@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Union
 
 import torch
 from torch import Tensor
@@ -35,10 +35,10 @@ class Seq2UMTree(nn.Module):
             embedding_dim=self.config.emb_size,
         )
 
-    def get_metric(self, reset: bool = False) -> Dict[str, float]:
+    def get_metric(self, reset: bool = False) -> dict[str, float]:
         return self.metrics.get_metric(reset=reset)
 
-    def run_metrics(self, output: Dict[str, Any]):
+    def run_metrics(self, output: dict[str, Any]):
         # # whole triplet
         self.metrics(
             output["decode_result"], output["spo_gold"],
@@ -47,8 +47,8 @@ class Seq2UMTree(nn.Module):
     def forward(
             self,
             sample: Seq2UMTreeData,
-    ) -> Dict[str, Any]:
-        output: Dict[str, Any] = {
+    ) -> dict[str, Any]:
+        output: dict[str, Any] = {
             "text": list(map(self.config.join, sample.text)),
         }
 
@@ -69,7 +69,7 @@ class Seq2UMTree(nn.Module):
         o, h = self.encoder.encode(t, length)
 
         if self.training:
-            t_outs: Tuple[Any, Any, Any] = self.decoder.train_forward(
+            t_outs: tuple[Any, Any, Any] = self.decoder.train_forward(
                 sample=sample,
                 encoder_o=o,
                 h=h,
@@ -145,7 +145,7 @@ class Encoder(nn.Module):
             self,
             t: Tensor,
             length: Tensor,
-    ) -> Tuple[Tensor, Tuple[Tensor, Tensor]]:
+    ) -> tuple[Tensor, tuple[Tensor, Tensor]]:
         B, L = t.shape
         mask = (t > 0).unsqueeze(dim=-1)
         mask.requires_grad = False
@@ -230,7 +230,7 @@ class Decoder(nn.Module):
         # order
         self.order = self.config.order
 
-        self.state_map: Tuple[Callable, Callable, Callable] = {
+        self.state_map: tuple[Callable, Callable, Callable] = {
             ("predicate", "subject", "object"): (
                 self.sos2rel,
                 self.rel2ent,
@@ -263,7 +263,7 @@ class Decoder(nn.Module):
             ),
         }[self.order]
 
-        self.decode_state_map: Tuple[Callable, Callable, Callable] = {
+        self.decode_state_map: tuple[Callable, Callable, Callable] = {
             ("predicate", "subject", "object"): (
                 self._out2rel,
                 self._out2entity,
@@ -300,9 +300,9 @@ class Decoder(nn.Module):
             self,
             *,
             input_var: Tensor,
-            hidden: Tuple[Tensor, Tensor],
+            hidden: tuple[Tensor, Tensor],
             encoder_outputs: Tensor,
-    ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor]]:
+    ) -> tuple[Tensor, Tensor, tuple[Tensor, Tensor]]:
         h_n, c_n = hidden
         B, O, V = input_var.shape
         assert h_n.shape == c_n.shape == (1, B, V)
@@ -327,10 +327,10 @@ class Decoder(nn.Module):
     def to_rel(
             self,
             input: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             encoder_o: Tensor,
             mask: Tensor,
-    ) -> Tuple[Tensor, Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[Tensor, tuple[Tensor, Tensor], Tensor]:
         output, attn, h = self.forward_step(
             input_var=input,
             hidden=h,
@@ -352,10 +352,10 @@ class Decoder(nn.Module):
     def to_ent(
             self,
             input: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             encoder_o: Tensor,
             mask: Tensor,
-    ) -> Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor], Tensor]:
         output, attn, h = self.forward_step(
             input_var=input,
             hidden=h,
@@ -382,9 +382,9 @@ class Decoder(nn.Module):
             self,
             sos: Tensor,
             encoder_o: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             mask: Tensor,
-    ) -> Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor], Tensor]:
         out, h, new_encoder_o = self.to_ent(sos, h, encoder_o, mask)
         return out, h, new_encoder_o
 
@@ -392,20 +392,20 @@ class Decoder(nn.Module):
             self,
             sos: Tensor,
             encoder_o: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             mask: Tensor,
-    ) -> Tuple[Tensor, Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[Tensor, tuple[Tensor, Tensor], Tensor]:
         out, h, new_encoder_o = self.to_rel(sos, h, encoder_o, mask)
         out = out.squeeze(dim=1)
         return out, h, new_encoder_o
 
     def ent2ent(
             self,
-            ent: Tuple[Union[List[int], Tensor], Union[List[int], Tensor]],
+            ent: tuple[Union[list[int], Tensor], Union[list[int], Tensor]],
             encoder_o: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             mask: Tensor,
-    ) -> Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor], Tensor]:
         k1, k2 = ent
         k1 = seq_gather(encoder_o, k1)
         k2 = seq_gather(encoder_o, k2)
@@ -417,11 +417,11 @@ class Decoder(nn.Module):
 
     def ent2rel(
             self,
-            ent: Tuple[Union[List[int], Tensor], Union[List[int], Tensor]],
+            ent: tuple[Union[list[int], Tensor], Union[list[int], Tensor]],
             encoder_o: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             mask: Tensor,
-    ) -> Tuple[Tensor, Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[Tensor, tuple[Tensor, Tensor], Tensor]:
         k1, k2 = ent
         k1 = seq_gather(encoder_o, k1)
         k2 = seq_gather(encoder_o, k2)
@@ -437,9 +437,9 @@ class Decoder(nn.Module):
             self,
             rel: Tensor,
             encoder_o: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
             mask: Tensor,
-    ) -> Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor]:
+    ) -> tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor], Tensor]:
         input = self.rel_emb(rel)
         assert isinstance(input, Tensor)
         input = input.unsqueeze(dim=1)
@@ -451,11 +451,11 @@ class Decoder(nn.Module):
             *,
             sample: Seq2UMTreeData,
             encoder_o: Tensor,
-            h: Tuple[Tensor, Tensor],
+            h: tuple[Tensor, Tensor],
     ) -> Union[
-        Tuple[Tensor, Tuple[Tensor, Tensor], Tuple[Tensor, Tensor]],
-        Tuple[Tuple[Tensor, Tensor], Tensor, Tuple[Tensor, Tensor]],
-        Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor],
+        tuple[Tensor, tuple[Tensor, Tensor], tuple[Tensor, Tensor]],
+        tuple[tuple[Tensor, Tensor], Tensor, tuple[Tensor, Tensor]],
+        tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor], Tensor],
     ]:
         B, L = sample.T.shape
         embed: Tensor = self.sos(torch.tensor(0, device=sample.device))
@@ -492,15 +492,15 @@ class Decoder(nn.Module):
             *,
             sample: Seq2UMTreeData,
             encoder_o: Tensor,
-            decoder_h: Tuple[Tensor, Tensor],
-    ) -> List[List[Dict[ComponentName, str]]]:
+            decoder_h: tuple[Tensor, Tensor],
+    ) -> list[list[dict[ComponentName, str]]]:
         t = sample.T
         B, L = t.shape
         mask = (t > 0).unsqueeze(dim=-1)
         mask.requires_grad = False
         assert mask.shape == (B, L, 1)
         text = [[self.id2word[c] for c in sent] for sent in t.tolist()]
-        result: List[List[Dict[ComponentName, str]]] = []
+        result: list[list[dict[ComponentName, str]]] = []
         for i, sent in enumerate(text):
             h, c = (
                 decoder_h[0][:,i,:].unsqueeze(dim=1).contiguous(),
@@ -517,11 +517,11 @@ class Decoder(nn.Module):
 
     def _out2entity(
             self,
-            sent: List[str],
-            out: Tuple[Tensor, Tensor],
-    ) -> List[Tuple[Tuple[int, int], str]]:
+            sent: list[str],
+            out: tuple[Tensor, Tensor],
+    ) -> list[tuple[tuple[int, int], str]]:
         out1, out2 = out
-        entities: List[Tuple[Tuple[int, int], str]] = []
+        entities: list[tuple[tuple[int, int], str]] = []
         pred1 = (out1.squeeze() > self.threshold)
         pred2 = (out2.squeeze() > self.threshold)
         for (start,) in pred1.nonzero().tolist():
@@ -536,9 +536,9 @@ class Decoder(nn.Module):
 
     def _out2rel(
             self,
-            sent: List[str],
+            sent: list[str],
             out: Tensor,
-    ) -> List[Tuple[int, str]]:
+    ) -> list[tuple[int, str]]:
         pred = (out.squeeze() > self.threshold)
         return [(i, self.id2rel[i]) for (i,) in pred.nonzero().tolist()]
 
@@ -558,12 +558,12 @@ class Decoder(nn.Module):
     def extract_items(
         self,
         *,
-        sent: List[str],
+        sent: list[str],
         mask: Tensor,
         encoder_o: Tensor,
-        t1_h: Tuple[Tensor, Tensor],
-    ) -> List[Dict[ComponentName, str]]:
-        acc: List[Dict[ComponentName, str]] = []
+        t1_h: tuple[Tensor, Tensor],
+    ) -> list[dict[ComponentName, str]]:
+        acc: list[dict[ComponentName, str]] = []
         device = encoder_o.device
 
         embed: Tensor = self.sos(torch.tensor(0, device=device))

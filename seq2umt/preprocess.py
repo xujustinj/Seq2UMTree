@@ -2,7 +2,7 @@ from collections import Counter
 from functools import cached_property
 import json
 import os
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal, Optional, Union
 
 from .config import Seq2UMTreeConfig
 from .types import ComponentName
@@ -28,7 +28,7 @@ class Seq2UMTreePreprocessor:
             os.makedirs(self.data_root)
 
     @cached_property
-    def relation_vocab(self) -> Dict[str, int]:
+    def relation_vocab(self) -> dict[str, int]:
         if not os.path.exists(self.config.relation_vocab_path):
             self.gen_relation_vocab()
         return self.config.rel2id
@@ -44,7 +44,7 @@ class Seq2UMTreePreprocessor:
         assert isinstance(spo_list, list)
         if not self._check_valid(text, spo_list):
             return None
-        extracted_spo_list: List[Dict[ComponentName, str]] = [
+        extracted_spo_list: list[dict[ComponentName, str]] = [
             {
                 "predicate": spo["predicate"],
                 "object": spo["object"],
@@ -59,7 +59,7 @@ class Seq2UMTreePreprocessor:
         }
         return json.dumps(result, ensure_ascii=False)
 
-    def _train_read_line(self, line: str) -> Optional[List[str]]:
+    def _train_read_line(self, line: str) -> Optional[list[str]]:
         # teacher forcing
         # batches are aligned by the triplets rather than sentences.
         instance = json.loads(line)
@@ -85,9 +85,9 @@ class Seq2UMTreePreprocessor:
 
     def spo_to_tree(
         self,
-        spo_list: List[Dict[str, str]],
-        order: Tuple[str, str, str] = ("predicate", "subject", "object")
-    ) -> List[Tuple[str, str, List[str], List[str], List[str]]]:
+        spo_list: list[dict[str, str]],
+        order: tuple[str, str, str] = ("predicate", "subject", "object")
+    ) -> list[tuple[str, str, list[str], list[str], list[str]]]:
         """return the ground truth of the tree: rel, subj, obj, used for teacher forcing.
 
         r: given text, one of the relations
@@ -101,13 +101,13 @@ class Seq2UMTreePreprocessor:
         obj: multi-label classification of object
 
         Arguments:
-            spo_list {List[Dict[str, str]]} -- [description]
+            spo_list {list[dict[str, str]]} -- [description]
 
         Returns:
-            List[Tuple[str]] -- [(r, s, rel, subj, obj)]
+            list[tuple[str]] -- [(r, s, rel, subj, obj)]
         """
         # rel, subj, obj
-        result: List[Tuple[str, str, List[str], List[str], List[str]]] = []
+        result: list[tuple[str, str, list[str], list[str], list[str]]] = []
         t1_out = list(set(t[order[0]] for t in spo_list))
         for t1_in in t1_out:
             t2_out = list(set(t[order[1]] for t in spo_list if t[order[0]] == t1_in))
@@ -122,21 +122,21 @@ class Seq2UMTreePreprocessor:
                 result.append((t1_in, t2_in, t1_out, t2_out, t3_out))
         return result
 
-    def spo_to_seq(self, text: str, spo_list: List[Dict[str, str]]):
+    def spo_to_seq(self, text: str, spo_list: list[dict[str, str]]):
         order = self.config.order
 
         tree = self.spo_to_tree(spo_list, order)
         tokens = self.config.tokenizer(text)
 
-        def to_rel(outp: List[str]) -> List[Literal[0, 1]]:
-            rel_idx: List[Literal[0, 1]] = [0] * len(self.relation_vocab)
+        def to_rel(outp: list[str]) -> list[Literal[0, 1]]:
+            rel_idx: list[Literal[0, 1]] = [0] * len(self.relation_vocab)
             for rel_name in outp:
                 rel_idx[self.relation_vocab[rel_name]] = 1
             return rel_idx
 
-        def to_ent(outp: List[str]) -> Tuple[List[Literal[0, 1]], List[Literal[0, 1]]]:
-            ent1: List[Literal[0, 1]] = [0] * len(tokens)
-            ent2: List[Literal[0, 1]] = [0] * len(tokens)
+        def to_ent(outp: list[str]) -> tuple[list[Literal[0, 1]], list[Literal[0, 1]]]:
+            ent1: list[Literal[0, 1]] = [0] * len(tokens)
+            ent2: list[Literal[0, 1]] = [0] * len(tokens)
             for name in outp:
                 name_tokens = self.config.tokenizer(name)
                 id = find(tokens, name_tokens)
@@ -144,7 +144,7 @@ class Seq2UMTreePreprocessor:
                 ent2[id + len(name_tokens) - 1] = 1
             return ent1, ent2
 
-        def to_in_key(inp: Optional[str], name: ComponentName) -> Union[int, Tuple[int, int]]:
+        def to_in_key(inp: Optional[str], name: ComponentName) -> Union[int, tuple[int, int]]:
             if not inp:
                 return -1, -1
             elif name == "predicate":
@@ -155,7 +155,7 @@ class Seq2UMTreePreprocessor:
                 k2 = k1 + len(inp_tokens) - 1
                 return k1, k2
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for t in tree:
             t1_in, t2_in, t1_out, t2_out, t3_out = t
 
@@ -196,7 +196,7 @@ class Seq2UMTreePreprocessor:
             results.append(result)
         return results
 
-    def _check_valid(self, text: str, spo_list: List[Dict[str, str]]) -> bool:
+    def _check_valid(self, text: str, spo_list: list[dict[str, str]]) -> bool:
         if len(spo_list) == 0:
             return False
 
@@ -245,7 +245,7 @@ class Seq2UMTreePreprocessor:
     def gen_vocab(
         self,
         min_freq: int,
-        init_result: Dict[str, int] = {
+        init_result: dict[str, int] = {
             PAD: 0,
             EOS: 1,
             SEP_VERTICAL_BAR: 2,

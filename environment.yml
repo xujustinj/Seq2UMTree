@@ -1,18 +1,15 @@
-name: OpenJERE
+name: Seq2UMTree
 channels:
-  - cerebis
   - pytorch
   - anaconda
   - conda-forge
 dependencies:
-  - python=3.8
+  - python
+  - dataclasses-json
   - ipykernel
-  - matplotlib-base
   - numpy
-  - overrides
   - pytorch=*=*cuda*
   - spacy
   - spacy-model-en_core_web_sm
   - tqdm
-  - transformers
   - xmltodict

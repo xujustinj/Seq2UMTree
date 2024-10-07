@@ -7,7 +7,7 @@ import json
 import os.path
 import re
 import sys
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Optional
 
 import spacy
 
@@ -42,9 +42,9 @@ class DataSetType(Enum):
 class DataReader:
     def __init__(
         self,
-        data: List[Dict],
-        misspelling: Optional[Dict[str, str]] = None,
-        rephrase: Tuple[Optional[Callable], Optional[Callable]] = (None, None),
+        data: list[dict],
+        misspelling: Optional[dict[str, str]] = None,
+        rephrase: tuple[Optional[Callable], Optional[Callable]] = (None, None),
     ):
         self.data = data
         self.misspelling = misspelling
@@ -1258,7 +1258,7 @@ def show_var(expression, joiner="\n", print=print):
 
     Parameters
     ----------
-    expression: ``List[str]``, required
+    expression: ``list[str]``, required
         A list of varible names string.
 
     Returns

@@ -1,10 +1,7 @@
-from typing import List
-
-
-def find(tokens: List[str], entity: List[str]) -> int:
+def find(tokens: list[str], entity: list[str]) -> int:
     # Python program for KMP Algorithm
     # https://www.geeksforgeeks.org/python-program-for-kmp-algorithm-for-pattern-searching-2/
-    def KMPSearch(pat, txt) -> List[int]:
+    def KMPSearch(pat, txt) -> list[int]:
         M = len(pat)
         N = len(txt)
 
@@ -39,7 +36,7 @@ def find(tokens: List[str], entity: List[str]) -> int:
                     i += 1
         return result
 
-    def computeLPSArray(pat, M: int, lps: List[int]):
+    def computeLPSArray(pat, M: int, lps: list[int]):
         len = 0  # length of the previous longest prefix suffix
 
         assert lps[0] == 0

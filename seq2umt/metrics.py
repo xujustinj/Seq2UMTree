@@ -1,6 +1,3 @@
-from typing import Dict, List
-
-
 class F1Triplet:
     def __init__(self):
         self.A = 1e-10
@@ -25,8 +22,8 @@ class F1Triplet:
 
     def __call__(
         self,
-        predictions: List[List[Dict[str, str]]],
-        gold_labels: List[List[Dict[str, str]]],
+        predictions: list[list[dict[str, str]]],
+        gold_labels: list[list[dict[str, str]]],
         get_seq=lambda dic: (dic["object"], dic["predicate"], dic["subject"]),
     ):
         for g, p in zip(gold_labels, predictions):

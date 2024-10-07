@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 import json
-from typing import Iterable, List, Optional, Tuple, TypeVar
+from typing import Iterable, Optional, TypeVar
 
 from dataclasses_json import dataclass_json, DataClassJsonMixin, LetterCase
 from tqdm import tqdm
@@ -10,11 +10,11 @@ from tqdm import tqdm
 @dataclass_json(letter_case=LetterCase.SNAKE) # type: ignore
 @dataclass(frozen=True)
 class OldEntityMention(DataClassJsonMixin):
-    pos: Tuple[int, int]
+    pos: tuple[int, int]
     type: str
     sent_id: int
     name: str
-    global_pos: Tuple[int, int]
+    global_pos: tuple[int, int]
     index: str
 
 
@@ -24,16 +24,16 @@ class OldRelation(DataClassJsonMixin):
     r: str
     h: int
     t: int
-    evidence: List[int]
+    evidence: list[int]
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL) # type: ignore
 @dataclass(frozen=True)
 class OldSample(DataClassJsonMixin):
     title: str
-    vertex_set: List[List[OldEntityMention]]
-    labels: List[OldRelation]
-    sents: List[List[str]]
+    vertex_set: list[list[OldEntityMention]]
+    labels: list[OldRelation]
+    sents: list[list[str]]
 
 
 @dataclass_json
@@ -48,7 +48,7 @@ class NewRelation(DataClassJsonMixin):
 @dataclass(frozen=True)
 class NewSample(DataClassJsonMixin):
     text: str
-    spo_list: List[NewRelation]
+    spo_list: list[NewRelation]
 
 
 T = TypeVar("T")
