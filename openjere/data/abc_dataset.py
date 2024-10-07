@@ -1,12 +1,24 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Generic, Optional, TypeVar
 
+import torch
 from torch.utils.data import Dataset, DataLoader
 
 from openjere.config import Hyper
 
 
-class Abstract_dataset(ABC, Dataset):
+class AbstractData:
+    device = torch.device("cpu")
+
+    def pin_memory(self):
+        return self
+
+    def to(self, device: torch.device):
+        self.device = device
+        return self
+
+
+class AbstractDataset(ABC, Dataset):
     def __init__(self, hyper: Hyper, dataset: str):
         self.hyper = hyper
         self.data_root = hyper.data_root
@@ -25,20 +37,23 @@ class Abstract_dataset(ABC, Dataset):
     def __len__(self):
         pass
 
-class PartialDataLoader:
-    def __init__(self, batch_reader: Callable[[Any], object]):
-        self._batch_reader = batch_reader
+
+Data = TypeVar("Data")
+
+class PartialDataLoader(Generic[Data]):
+    def __init__(self, collate_fn: Callable[[Any], Data]):
+        self.collate_fn = collate_fn
 
     def __call__(
             self,
-            dataset: Abstract_dataset,
+            dataset: AbstractDataset,
             batch_size: Optional[int] = 1,
             num_workers: int = 0,
             shuffle: Optional[bool] = None,
-    ) -> DataLoader:
+    ) -> DataLoader[Data]:
         return DataLoader(
             dataset=dataset,
-            collate_fn=(lambda x: self._batch_reader(x)),
+            collate_fn=self.collate_fn,
             batch_size=batch_size,
             num_workers=num_workers,
             shuffle=shuffle,

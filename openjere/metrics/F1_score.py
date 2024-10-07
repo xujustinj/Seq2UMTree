@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 
-class F1_triplet(object):
+class F1Triplet:
     def __init__(self):
         self.A = 1e-10
         self.B = 1e-10

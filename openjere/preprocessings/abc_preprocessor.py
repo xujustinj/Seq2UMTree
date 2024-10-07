@@ -16,7 +16,7 @@ from openjere.config.const import (
 )
 
 
-class ABC_data_preprocessing(ABC):
+class AbstractPreprocessor(ABC):
     def __init__(self, hyper: Hyper):
         self.hyper = hyper
         self.raw_data_root = hyper.raw_data_root
@@ -121,7 +121,6 @@ class ABC_data_preprocessing(ABC):
             json.dump(relation_vocab, f, ensure_ascii=False)
 
     def yield_key(self, source: str, key: str):
-        # key = "text"
         with open(source, "r", encoding="utf-8") as s:
             for line in s:
                 line = line.strip("\n")

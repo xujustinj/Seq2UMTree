@@ -5,8 +5,10 @@ from typing import Dict, List, Tuple
 import numpy as np
 import torch
 
-from openjere.config import Hyper, seq_padding, ComponentName
-from .abc_dataset import Abstract_dataset, PartialDataLoader
+from openjere.config import Hyper, ComponentName
+from util.type import assert_type
+from util.tensors import seq_padding
+from .abc_dataset import AbstractData, AbstractDataset, PartialDataLoader
 
 
 def sort_all(batch, lens):
@@ -16,14 +18,9 @@ def sort_all(batch, lens):
     return sorted_all[2:], sorted_all[1]
 
 
-def assert_type(x, t):
-    assert isinstance(x, t)
-    return x
-
-
-class Seq2umt_Dataset(Abstract_dataset):
+class Seq2UMTreeDataset(AbstractDataset):
     def __init__(self, hyper: Hyper, dataset: str):
-        super(Seq2umt_Dataset, self).__init__(hyper, dataset)
+        super(Seq2UMTreeDataset, self).__init__(hyper, dataset)
 
         self.text_list: List[List[str]] = []
         self.spo_list: List[List[Dict[ComponentName, str]]] = []
@@ -140,7 +137,7 @@ class Seq2umt_Dataset(Abstract_dataset):
         return len(self.text_list)
 
 
-class Batch_reader(object):
+class Seq2UMTreeData(AbstractData):
     def __init__(self, data):
         transposed_data = list(zip(*data))
 
@@ -148,7 +145,6 @@ class Batch_reader(object):
         transposed_data, orig_idx = sort_all(transposed_data, lens)
 
         self.orig_idx = orig_idx
-        self.length = transposed_data[10]
 
         self.T = torch.from_numpy(np.stack(transposed_data[0])).long()
         self.S1 = torch.from_numpy(np.stack(transposed_data[1])).float()
@@ -164,7 +160,7 @@ class Batch_reader(object):
         self.O_K1_in = torch.from_numpy(np.stack(transposed_data[9])).long()
         self.O_K2_in = torch.from_numpy(np.stack(transposed_data[10])).long()
         self.text = transposed_data[11]
-        self.length = transposed_data[12]
+        self.length = torch.tensor(transposed_data[12]).long()
 
         self.spo_gold = transposed_data[-1]
 
@@ -183,7 +179,24 @@ class Batch_reader(object):
         self.O_K1_in = self.O_K1_in.pin_memory()
         self.O_K2_in = self.O_K2_in.pin_memory()
 
-        return self
+        return super().pin_memory()
+
+    def to(self, device: torch.device):
+        self.T = self.T.to(device=device)
+        self.S1 = self.S1.to(device=device)
+        self.S2 = self.S2.to(device=device)
+        self.O1 = self.O1.to(device=device)
+        self.O2 = self.O2.to(device=device)
+
+        self.R_gt = self.R_gt.to(device=device)
+        self.R_in = self.R_in.to(device=device)
+
+        self.S_K1_in = self.S_K1_in.to(device=device)
+        self.S_K2_in = self.S_K2_in.to(device=device)
+        self.O_K1_in = self.O_K1_in.to(device=device)
+        self.O_K2_in = self.O_K2_in.to(device=device)
+
+        return super().to(device)
 
 
-Seq2umt_loader = PartialDataLoader(Batch_reader)
+Seq2UMTreeDataLoader = PartialDataLoader(Seq2UMTreeData)
