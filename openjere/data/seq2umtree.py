@@ -1,14 +1,14 @@
 import json
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader, Dataset
 
 from openjere.config import Hyper, ComponentName
 from util.type import assert_type
 from util.tensors import seq_padding
-from .abc_dataset import AbstractData, AbstractDataset, PartialDataLoader
 
 
 def sort_all(batch, lens):
@@ -18,9 +18,31 @@ def sort_all(batch, lens):
     return sorted_all[2:], sorted_all[1]
 
 
-class Seq2UMTreeDataset(AbstractDataset):
+class Seq2UMTreeDataset(Dataset[Tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    List[str],
+    int,
+    List[Dict[ComponentName, str]],
+]]):
     def __init__(self, hyper: Hyper, dataset: str):
-        super(Seq2UMTreeDataset, self).__init__(hyper, dataset)
+        self.hyper = hyper
+        self.data_root = hyper.data_root
+
+        self.word_vocab = hyper.word2id
+        self.relation_vocab = hyper.rel2id
+        self.bio_vocab = hyper.bio_vocab
+
+        self.tokenizer = self.hyper.tokenizer
 
         self.text_list: List[List[str]] = []
         self.spo_list: List[List[Dict[ComponentName, str]]] = []
@@ -137,8 +159,10 @@ class Seq2UMTreeDataset(AbstractDataset):
         return len(self.text_list)
 
 
-class Seq2UMTreeData(AbstractData):
+class Seq2UMTreeData:
     def __init__(self, data):
+        self.device = torch.device("cpu")
+
         transposed_data = list(zip(*data))
 
         lens = transposed_data[12]
@@ -179,7 +203,7 @@ class Seq2UMTreeData(AbstractData):
         self.O_K1_in = self.O_K1_in.pin_memory()
         self.O_K2_in = self.O_K2_in.pin_memory()
 
-        return super().pin_memory()
+        return self
 
     def to(self, device: torch.device):
         self.T = self.T.to(device=device)
@@ -196,7 +220,23 @@ class Seq2UMTreeData(AbstractData):
         self.O_K1_in = self.O_K1_in.to(device=device)
         self.O_K2_in = self.O_K2_in.to(device=device)
 
-        return super().to(device)
+        self.device = device
+        return self
 
 
-Seq2UMTreeDataLoader = PartialDataLoader(Seq2UMTreeData)
+class Seq2UMTreeDataLoader(DataLoader[Seq2UMTreeData]):
+    def __init__(
+            self,
+            dataset: Seq2UMTreeDataset,
+            batch_size: Optional[int] = 1,
+            num_workers: int = 0,
+            shuffle: Optional[bool] = None,
+    ):
+        super().__init__(
+            dataset=dataset,
+            collate_fn=(lambda data: Seq2UMTreeData(data)),
+            batch_size=batch_size,
+            num_workers=num_workers,
+            shuffle=shuffle,
+            pin_memory=True,
+        )

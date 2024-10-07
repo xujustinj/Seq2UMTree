@@ -7,8 +7,6 @@ import torch
 from torch.optim.adam import Adam
 from torch.optim.optimizer import Optimizer
 from torch.optim.sgd import SGD
-import torch.utils
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from openjere.config import Hyper, OptimizerName
@@ -40,7 +38,7 @@ class Runner:
             batch_size: Optional[int] = 1,
             num_workers: int = 0,
             shuffle: Optional[bool] = None,
-    ) -> DataLoader[Seq2UMTreeData]:
+    ) -> Seq2UMTreeDataLoader:
         dataset = Seq2UMTreeDataset(hyper=self.hyper, dataset=split)
         dataloader = Seq2UMTreeDataLoader(
             dataset=dataset,
@@ -133,7 +131,7 @@ class Runner:
             os.mkdir(self.model_dir)
         torch.save(model.state_dict(), self.model_path(name))
 
-    def evaluation(self, model: Seq2UMTree, loader: DataLoader[Seq2UMTreeData]) -> Tuple[float, str]:
+    def evaluation(self, model: Seq2UMTree, loader: Seq2UMTreeDataLoader) -> Tuple[float, str]:
         model.metrics.reset()
         model.eval()
 
