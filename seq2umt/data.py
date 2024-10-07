@@ -6,9 +6,10 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from openjere.config import Hyper, ComponentName
 from util.type import assert_type
 from util.tensors import seq_padding
+from .config import Seq2UMTreeConfig
+from .types import ComponentName
 
 
 def sort_all(batch, lens):
@@ -16,6 +17,71 @@ def sort_all(batch, lens):
     unsorted_all = [lens] + [range(len(lens))] + list(batch)
     sorted_all = [list(t) for t in zip(*sorted(zip(*unsorted_all), reverse=True))]
     return sorted_all[2:], sorted_all[1]
+
+
+class Seq2UMTreeData:
+    def __init__(self, data):
+        self.device = torch.device("cpu")
+
+        transposed_data = list(zip(*data))
+
+        lens = transposed_data[12]
+        transposed_data, orig_idx = sort_all(transposed_data, lens)
+
+        self.orig_idx = orig_idx
+
+        self.T = torch.from_numpy(np.stack(transposed_data[0])).long()
+        self.S1 = torch.from_numpy(np.stack(transposed_data[1])).float()
+        self.S2 = torch.from_numpy(np.stack(transposed_data[2])).float()
+        self.O1 = torch.from_numpy(np.stack(transposed_data[3])).float()
+        self.O2 = torch.from_numpy(np.stack(transposed_data[4])).float()
+
+        self.R_gt = torch.from_numpy(np.stack(transposed_data[5])).float()
+        self.R_in = torch.from_numpy(np.stack(transposed_data[6])).long()
+
+        self.S_K1_in = torch.from_numpy(np.stack(transposed_data[7])).long()
+        self.S_K2_in = torch.from_numpy(np.stack(transposed_data[8])).long()
+        self.O_K1_in = torch.from_numpy(np.stack(transposed_data[9])).long()
+        self.O_K2_in = torch.from_numpy(np.stack(transposed_data[10])).long()
+        self.text = transposed_data[11]
+        self.length = torch.tensor(transposed_data[12]).long()
+
+        self.spo_gold = transposed_data[-1]
+
+    def pin_memory(self):
+        self.T = self.T.pin_memory()
+        self.S1 = self.S1.pin_memory()
+        self.S2 = self.S2.pin_memory()
+        self.O1 = self.O1.pin_memory()
+        self.O2 = self.O2.pin_memory()
+
+        self.R_gt = self.R_gt.pin_memory()
+        self.R_in = self.R_in.pin_memory()
+
+        self.S_K1_in = self.S_K1_in.pin_memory()
+        self.S_K2_in = self.S_K2_in.pin_memory()
+        self.O_K1_in = self.O_K1_in.pin_memory()
+        self.O_K2_in = self.O_K2_in.pin_memory()
+
+        return self
+
+    def to(self, device: torch.device):
+        self.T = self.T.to(device=device)
+        self.S1 = self.S1.to(device=device)
+        self.S2 = self.S2.to(device=device)
+        self.O1 = self.O1.to(device=device)
+        self.O2 = self.O2.to(device=device)
+
+        self.R_gt = self.R_gt.to(device=device)
+        self.R_in = self.R_in.to(device=device)
+
+        self.S_K1_in = self.S_K1_in.to(device=device)
+        self.S_K2_in = self.S_K2_in.to(device=device)
+        self.O_K1_in = self.O_K1_in.to(device=device)
+        self.O_K2_in = self.O_K2_in.to(device=device)
+
+        self.device = device
+        return self
 
 
 class Seq2UMTreeDataset(Dataset[Tuple[
@@ -34,14 +100,14 @@ class Seq2UMTreeDataset(Dataset[Tuple[
     int,
     List[Dict[ComponentName, str]],
 ]]):
-    def __init__(self, hyper: Hyper, dataset: str):
-        self.hyper = hyper
-        self.data_root = hyper.data_root
+    def __init__(self, config: Seq2UMTreeConfig, dataset: str):
+        self.config = config
+        self.data_root = config.data_root
 
-        self.word_vocab = hyper.word2id
-        self.relation_vocab = hyper.rel2id
+        self.word_vocab = config.word2id
+        self.relation_vocab = config.rel2id
 
-        self.tokenizer = self.hyper.tokenizer
+        self.tokenizer = self.config.tokenizer
 
         self.text_list: List[List[str]] = []
         self.spo_list: List[List[Dict[ComponentName, str]]] = []
@@ -68,7 +134,7 @@ class Seq2UMTreeDataset(Dataset[Tuple[
                 text = assert_type(instance["text"], str)
                 spo_list: List[Dict[ComponentName, str]] = assert_type(instance["spo_list"], list)
 
-                tokens = self.hyper.tokenizer(text)
+                tokens = self.config.tokenizer(text)
                 text_id = [self.word_vocab.get(c, oov_token) for c in tokens]
 
                 assert len(text_id) > 0
@@ -156,71 +222,6 @@ class Seq2UMTreeDataset(Dataset[Tuple[
 
     def __len__(self) -> int:
         return len(self.text_list)
-
-
-class Seq2UMTreeData:
-    def __init__(self, data):
-        self.device = torch.device("cpu")
-
-        transposed_data = list(zip(*data))
-
-        lens = transposed_data[12]
-        transposed_data, orig_idx = sort_all(transposed_data, lens)
-
-        self.orig_idx = orig_idx
-
-        self.T = torch.from_numpy(np.stack(transposed_data[0])).long()
-        self.S1 = torch.from_numpy(np.stack(transposed_data[1])).float()
-        self.S2 = torch.from_numpy(np.stack(transposed_data[2])).float()
-        self.O1 = torch.from_numpy(np.stack(transposed_data[3])).float()
-        self.O2 = torch.from_numpy(np.stack(transposed_data[4])).float()
-
-        self.R_gt = torch.from_numpy(np.stack(transposed_data[5])).float()
-        self.R_in = torch.from_numpy(np.stack(transposed_data[6])).long()
-
-        self.S_K1_in = torch.from_numpy(np.stack(transposed_data[7])).long()
-        self.S_K2_in = torch.from_numpy(np.stack(transposed_data[8])).long()
-        self.O_K1_in = torch.from_numpy(np.stack(transposed_data[9])).long()
-        self.O_K2_in = torch.from_numpy(np.stack(transposed_data[10])).long()
-        self.text = transposed_data[11]
-        self.length = torch.tensor(transposed_data[12]).long()
-
-        self.spo_gold = transposed_data[-1]
-
-    def pin_memory(self):
-        self.T = self.T.pin_memory()
-        self.S1 = self.S1.pin_memory()
-        self.S2 = self.S2.pin_memory()
-        self.O1 = self.O1.pin_memory()
-        self.O2 = self.O2.pin_memory()
-
-        self.R_gt = self.R_gt.pin_memory()
-        self.R_in = self.R_in.pin_memory()
-
-        self.S_K1_in = self.S_K1_in.pin_memory()
-        self.S_K2_in = self.S_K2_in.pin_memory()
-        self.O_K1_in = self.O_K1_in.pin_memory()
-        self.O_K2_in = self.O_K2_in.pin_memory()
-
-        return self
-
-    def to(self, device: torch.device):
-        self.T = self.T.to(device=device)
-        self.S1 = self.S1.to(device=device)
-        self.S2 = self.S2.to(device=device)
-        self.O1 = self.O1.to(device=device)
-        self.O2 = self.O2.to(device=device)
-
-        self.R_gt = self.R_gt.to(device=device)
-        self.R_in = self.R_in.to(device=device)
-
-        self.S_K1_in = self.S_K1_in.to(device=device)
-        self.S_K2_in = self.S_K2_in.to(device=device)
-        self.O_K1_in = self.O_K1_in.to(device=device)
-        self.O_K2_in = self.O_K2_in.to(device=device)
-
-        self.device = device
-        return self
 
 
 class Seq2UMTreeDataLoader(DataLoader[Seq2UMTreeData]):

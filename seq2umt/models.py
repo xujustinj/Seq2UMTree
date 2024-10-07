@@ -4,33 +4,35 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from openjere.config import Hyper, ComponentName
-from openjere.layer import Attention, MaskedBCE
-from openjere.metrics import F1Triplet
-from openjere.data.seq2umtree import Seq2UMTreeData
 from util.tensors import seq_max_pool, seq_and_vec, seq_gather
+from .attention import Attention
+from .data import Seq2UMTreeData
+from .config import Seq2UMTreeConfig
+from .loss import MaskedBCE
+from .metrics import F1Triplet
+from .types import ComponentName
 
 
 class Seq2UMTree(nn.Module):
-    def __init__(self, hyper: Hyper):
+    def __init__(self, config: Seq2UMTreeConfig):
         super().__init__()
 
         self.metrics = F1Triplet()
 
-        self.hyper = hyper
-        self.order = hyper.order
-        self.data_root = hyper.data_root
+        self.config = config
+        self.order = config.order
+        self.data_root = config.data_root
 
-        self.word_vocab = self.hyper.word2id
+        self.word_vocab = self.config.word2id
 
         self.mBCE = MaskedBCE()
         self.BCE = nn.BCEWithLogitsLoss()
 
-        self.encoder = Encoder(hyper)
-        self.decoder = Decoder(hyper)
+        self.encoder = Encoder(config)
+        self.decoder = Decoder(config)
         self.sos = nn.Embedding(
             num_embeddings=1,
-            embedding_dim=self.hyper.emb_size,
+            embedding_dim=self.config.emb_size,
         )
 
     def get_metric(self, reset: bool = False) -> Dict[str, float]:
@@ -47,7 +49,7 @@ class Seq2UMTree(nn.Module):
             sample: Seq2UMTreeData,
     ) -> Dict[str, Any]:
         output: Dict[str, Any] = {
-            "text": list(map(self.hyper.join, sample.text)),
+            "text": list(map(self.config.join, sample.text)),
         }
 
         t = text_id = sample.T
@@ -107,19 +109,19 @@ class Seq2UMTree(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, hyper: Hyper):
+    def __init__(self, config: Seq2UMTreeConfig):
         super().__init__()
 
-        lstm_hidden_size = hyper.hidden_size
+        lstm_hidden_size = config.hidden_size
 
         self.embeds = nn.Embedding(
-            num_embeddings=len(hyper.word2id),
-            embedding_dim=hyper.emb_size,
+            num_embeddings=len(config.word2id),
+            embedding_dim=config.emb_size,
         )
-        self.embeds_dropout = nn.Dropout(hyper.dropout)
+        self.embeds_dropout = nn.Dropout(config.dropout)
 
         self.bi_lstm = nn.LSTM(
-            input_size=hyper.emb_size,
+            input_size=config.emb_size,
             hidden_size=(lstm_hidden_size // 2),
             num_layers=2,
             batch_first=True,
@@ -174,20 +176,20 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, hyper: Hyper):
+    def __init__(self, config: Seq2UMTreeConfig):
         super().__init__()
 
-        self.hyper = hyper
-        self.data_root = hyper.data_root
-        self.threshold = hyper.threshold_logit
-        self.word_emb_size = hyper.emb_size
-        self.hidden_size = hyper.hidden_size
+        self.config = config
+        self.data_root = config.data_root
+        self.threshold = config.threshold_logit
+        self.word_emb_size = config.emb_size
+        self.hidden_size = config.hidden_size
 
-        self.word_vocab = hyper.word2id
+        self.word_vocab = config.word2id
 
-        self.rel_num = len(hyper.rel2id)
-        self.id2word = hyper.id2word
-        self.id2rel = hyper.id2rel
+        self.rel_num = len(config.rel2id)
+        self.id2word = config.id2word
+        self.id2rel = config.id2rel
 
         self.lstm = nn.LSTM(
             input_size=self.word_emb_size,
@@ -196,7 +198,7 @@ class Decoder(nn.Module):
             batch_first=True,
             bidirectional=False,
         )
-        self.dropout = nn.Dropout(hyper.dropout)
+        self.dropout = nn.Dropout(config.dropout)
 
         self.attention = Attention(self.word_emb_size)
         self.conv2_to_1_rel = nn.Conv1d(
@@ -226,7 +228,7 @@ class Decoder(nn.Module):
         self.ent2 = nn.Linear(self.word_emb_size, 1)
 
         # order
-        self.order = self.hyper.order
+        self.order = self.config.order
 
         self.state_map: Tuple[Callable, Callable, Callable] = {
             ("predicate", "subject", "object"): (
@@ -527,7 +529,7 @@ class Decoder(nn.Module):
                 end = start + length
                 entities.append((
                     (start, end),
-                    self.hyper.join(sent[start:end+1]),
+                    self.config.join(sent[start:end+1]),
                 ))
                 break
         return entities

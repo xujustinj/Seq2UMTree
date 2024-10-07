@@ -4,7 +4,8 @@ import json
 import os
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from openjere.config import Hyper, ComponentName
+from .config import Seq2UMTreeConfig
+from .types import ComponentName
 from util.find import find
 
 
@@ -18,19 +19,19 @@ NO_RELATION = "<NA>"
 
 
 class Seq2UMTreePreprocessor:
-    def __init__(self, hyper: Hyper):
-        self.hyper = hyper
-        self.raw_data_root = hyper.raw_data_root
-        self.data_root = hyper.data_root
+    def __init__(self, config: Seq2UMTreeConfig):
+        self.config = config
+        self.raw_data_root = config.raw_data_root
+        self.data_root = config.data_root
 
         if not os.path.exists(self.data_root):
             os.makedirs(self.data_root)
 
     @cached_property
     def relation_vocab(self) -> Dict[str, int]:
-        if not os.path.exists(self.hyper.relation_vocab_path):
+        if not os.path.exists(self.config.relation_vocab_path):
             self.gen_relation_vocab()
-        return self.hyper.rel2id
+        return self.config.rel2id
 
     def _read_line(self, line: str) -> Optional[str]:
         # for evaluation only
@@ -122,10 +123,10 @@ class Seq2UMTreePreprocessor:
         return result
 
     def spo_to_seq(self, text: str, spo_list: List[Dict[str, str]]):
-        order = self.hyper.order
+        order = self.config.order
 
         tree = self.spo_to_tree(spo_list, order)
-        tokens = self.hyper.tokenizer(text)
+        tokens = self.config.tokenizer(text)
 
         def to_rel(outp: List[str]) -> List[Literal[0, 1]]:
             rel_idx: List[Literal[0, 1]] = [0] * len(self.relation_vocab)
@@ -137,7 +138,7 @@ class Seq2UMTreePreprocessor:
             ent1: List[Literal[0, 1]] = [0] * len(tokens)
             ent2: List[Literal[0, 1]] = [0] * len(tokens)
             for name in outp:
-                name_tokens = self.hyper.tokenizer(name)
+                name_tokens = self.config.tokenizer(name)
                 id = find(tokens, name_tokens)
                 ent1[id] = 1
                 ent2[id + len(name_tokens) - 1] = 1
@@ -149,7 +150,7 @@ class Seq2UMTreePreprocessor:
             elif name == "predicate":
                 return self.relation_vocab[inp]
             else:
-                inp_tokens = self.hyper.tokenizer(inp)
+                inp_tokens = self.config.tokenizer(inp)
                 k1 = find(tokens, inp_tokens)
                 k2 = k1 + len(inp_tokens) - 1
                 return k1, k2
@@ -205,7 +206,7 @@ class Seq2UMTreePreprocessor:
         return True
 
     def gen_all_data(self):
-        for path in self.hyper.raw_data_list:
+        for path in self.config.raw_data_list:
             if "train" in path:
                 self.gen_train_data(path)
             else:
@@ -252,13 +253,13 @@ class Seq2UMTreePreprocessor:
         },
     ):
         # might contain sos, eos, pad ....
-        source = os.path.join(self.raw_data_root, self.hyper.train)
-        target = self.hyper.word_vocab_path
+        source = os.path.join(self.raw_data_root, self.config.train)
+        target = self.config.word_vocab_path
 
         cnt = Counter()
 
         for text in self.yield_key(source, "text"):
-            cnt.update(self.hyper.tokenizer(text))
+            cnt.update(self.config.tokenizer(text))
 
         result = init_result
         i = len(init_result)
@@ -275,14 +276,14 @@ class Seq2UMTreePreprocessor:
     def gen_relation_vocab(self):
         relation_vocab = {}
         rel_set = set()
-        source = os.path.join(self.raw_data_root, self.hyper.train)
+        source = os.path.join(self.raw_data_root, self.config.train)
 
         for spo_list in self.yield_key(source, "spo_list"):
             rel_set.update(t["predicate"] for t in spo_list)
 
         relation_vocab = {k: v for v, k in enumerate(rel_set)}
         relation_vocab[NO_RELATION] = len(relation_vocab)
-        with open(self.hyper.relation_vocab_path, "w", encoding="utf-8") as f:
+        with open(self.config.relation_vocab_path, "w", encoding="utf-8") as f:
             json.dump(relation_vocab, f, ensure_ascii=False)
 
     def yield_key(self, source: str, key: str):

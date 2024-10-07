@@ -2,24 +2,15 @@ from dataclasses import dataclass
 from functools import cached_property
 import json
 import os
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 
+from .types import ComponentName, OptimizerName
 
-OptimizerName = Literal[
-    "adam",
-    "sgd",
-]
-
-ComponentName = Literal[
-    "subject",
-    "predicate",
-    "object",
-]
 
 @dataclass
-class Hyper:
+class Seq2UMTreeConfig:
     def __init__(self, path: str):
         self.dataset: str
 

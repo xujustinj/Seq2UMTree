@@ -9,10 +9,11 @@ from torch.optim.optimizer import Optimizer
 from torch.optim.sgd import SGD
 from tqdm import tqdm
 
-from openjere.config import Hyper, OptimizerName
-from openjere.data import Seq2UMTreeData, Seq2UMTreeDataset, Seq2UMTreeDataLoader
-from openjere.models import Seq2UMTree
-from openjere.preprocessings import Seq2UMTreePreprocessor
+from seq2umt.data import Seq2UMTreeData, Seq2UMTreeDataset, Seq2UMTreeDataLoader
+from seq2umt.config import Seq2UMTreeConfig
+from seq2umt.models import Seq2UMTree
+from seq2umt.preprocess import Seq2UMTreePreprocessor
+from seq2umt.types import OptimizerName
 
 from util.device import get_device
 
@@ -22,7 +23,7 @@ class Runner:
         self.exp_name = exp_name
         self.model_dir = "saved_models"
 
-        self.hyper = Hyper(os.path.join("experiments", self.exp_name + ".json"))
+        self.config = Seq2UMTreeConfig(os.path.join("experiments", self.exp_name + ".json"))
         self.device = get_device()
 
         logging.basicConfig(
@@ -39,7 +40,7 @@ class Runner:
             num_workers: int = 0,
             shuffle: Optional[bool] = None,
     ) -> Seq2UMTreeDataLoader:
-        dataset = Seq2UMTreeDataset(hyper=self.hyper, dataset=split)
+        dataset = Seq2UMTreeDataset(config=self.config, dataset=split)
         dataloader = Seq2UMTreeDataLoader(
             dataset=dataset,
             batch_size=batch_size,
@@ -49,19 +50,19 @@ class Runner:
         return dataloader
 
     def _get_optimizer(self, model: Seq2UMTree) -> Optimizer:
-        name: OptimizerName = self.hyper.optimizer
+        name: OptimizerName = self.config.optimizer
         if name == "adam":
             return Adam(model.parameters())
         elif name == "sgd":
             return SGD(model.parameters(), lr=0.5)
 
     def _get_model(self) -> Seq2UMTree:
-        model = Seq2UMTree(self.hyper)
+        model = Seq2UMTree(self.config)
         model.to(device=self.device)
         return model
 
     def preprocessing(self):
-        preprocessor = Seq2UMTreePreprocessor(self.hyper)
+        preprocessor = Seq2UMTreePreprocessor(self.config)
         preprocessor.gen_relation_vocab()
         preprocessor.gen_all_data()
         preprocessor.gen_vocab(min_freq=2)
@@ -77,8 +78,8 @@ class Runner:
             model = self._get_model()
             self.load_model(model, "best")
             loader = self._get_dataloader(
-                split=self.hyper.test,
-                batch_size=self.hyper.batch_size_eval,
+                split=self.config.test,
+                batch_size=self.config.batch_size_eval,
                 num_workers=8,
             )
             f1, log = self.evaluation(model=model, loader=loader)
@@ -95,10 +96,10 @@ class Runner:
         elif mode == "subevaluation":
             model = self._get_model()
             self.load_model(model, "best")
-            for split in self.hyper.subsets:
+            for split in self.config.subsets:
                 loader = self._get_dataloader(
                     split=split,
-                    batch_size=self.hyper.batch_size_eval,
+                    batch_size=self.config.batch_size_eval,
                     num_workers=8,
                 )
                 f1, log = self.evaluation(model=model, loader=loader)
@@ -107,8 +108,8 @@ class Runner:
 
         elif mode == "debug":
             loader = self._get_dataloader(
-                split=self.hyper.dev,
-                batch_size=self.hyper.batch_size_train,
+                split=self.config.dev,
+                batch_size=self.config.batch_size_train,
                 num_workers=0,
             )
             for sample in tqdm(loader):
@@ -156,24 +157,24 @@ class Runner:
         model = self._get_model()
         optimizer = self._get_optimizer(model)
         train_loader = self._get_dataloader(
-            split=self.hyper.train,
-            batch_size=self.hyper.batch_size_train,
+            split=self.config.train,
+            batch_size=self.config.batch_size_train,
             num_workers=8,
             shuffle=True,
         )
         dev_loader = self._get_dataloader(
-            split=self.hyper.dev,
-            batch_size=self.hyper.batch_size_eval,
+            split=self.config.dev,
+            batch_size=self.config.batch_size_eval,
             num_workers=4,
         )
         test_loader = self._get_dataloader(
-            split=self.hyper.test,
-            batch_size=self.hyper.batch_size_eval,
+            split=self.config.test,
+            batch_size=self.config.batch_size_eval,
             num_workers=4,
         )
         score = -float("inf")
         best_epoch = -1
-        num_epochs = self.hyper.epoch_num
+        num_epochs = self.config.epoch_num
         for epoch in range(1, 1+num_epochs):
             model.train()
             pbar = tqdm(train_loader)
