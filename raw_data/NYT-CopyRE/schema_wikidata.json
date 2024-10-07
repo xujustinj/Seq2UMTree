@@ -1,0 +1,133 @@
+[
+    {
+        "freebase_name": "/location/administrative_division/country",
+        "wikidata_id": "P17",
+        "wikidata_name": "country",
+        "wikidata_description": "sovereign state that this item is in (not to be used for human beings)"
+    },
+    {
+        "freebase_name": "/people/person/place_of_birth",
+        "wikidata_id": "P19",
+        "wikidata_name": "place of birth",
+        "wikidata_description": "most specific known birth location of a person, animal or fictional character"
+    },
+    {
+        "freebase_name": "/people/person/religion",
+        "wikidata_id": "P140",
+        "wikidata_name": "religion or worldview",
+        "wikidata_description": "religion of a person, organization or religious building, or associated with this subject"
+    },
+    {
+        "freebase_name": "/location/country/administrative_divisions",
+        "wikidata_id": "P150",
+        "wikidata_name": "contains the administrative territorial entity",
+        "wikidata_description": "direct subdivisions of an administrative territorial entity",
+        "note": "There is no Freebase relation exactly matching this name. Closest matches are `/location/country/first_level_divisions`, which is mapped to P150, and `/location/country/second_level_divisions`, which has no mapping."
+    },
+    {
+        "freebase_name": "/location/location/contains",
+        "note": "There is no Wikidata relation corresponding to this name, so we write our own description."
+    },
+    {
+        "freebase_name": "/business/company/place_founded",
+        "wikidata_id": "P740",
+        "wikidata_name": "location of formation",
+        "wikidata_description": "location where a group or organization was formed",
+        "note": "This is not listed in the Wikidata mapping, but Perplexity was able to find it."
+    },
+    {
+        "freebase_name": "/sports/sports_team_location/teams",
+        "note": "Q111724177 is kind of close but specifically refers to arenas."
+    },
+    {
+        "freebase_name": "/people/person/ethnicity",
+        "wikidata_id": "P172",
+        "wikidata_name": "ethnic group",
+        "wikidata_description": "subject's ethnicity"
+    },
+    {
+        "freebase_name": "/people/ethnicity/people",
+        "note": "Wikidata says: \"Should be ignored, reverse of https://www.freebase.com/people/person/ethnicity\""
+    },
+    {
+        "freebase_name": "/people/person/nationality",
+        "wikidata_id": "P27",
+        "wikidata_name": "country of citizenship",
+        "wikidata_description": "the object is a country that recognizes the subject as its citizen"
+    },
+    {
+        "freebase_name": "/business/person/company",
+        "wikidata_id": "P108",
+        "wikidata_name": "employer",
+        "wikidata_description": "person or organization for which the subject works or worked"
+    },
+    {
+        "freebase_name": "/business/company/founders",
+        "wikidata_id": "P112",
+        "wikidata_name": "founded by",
+        "wikidata_description": "founder or co-founder of this organization, religion, place or entity"
+    },
+    {
+        "freebase_name": "/people/ethnicity/geographic_distribution",
+        "note": "The geographic location associated with the ethnic group."
+    },
+    {
+        "freebase_name": "/sports/sports_team/location",
+        "note": "P115 is kind of close but specifically refers to arenas."
+    },
+    {
+        "freebase_name": "/location/neighborhood/neighborhood_of",
+        "wikidata_id": "P131",
+        "wikidata_name": "located in the administrative territorial entity",
+        "wikidata_description": "the item is located on the territory of the following administrative entity",
+        "note": "The Wikidata relation is much broader than the Freebase one."
+    },
+    {
+        "freebase_name": "/people/person/place_lived",
+        "wikidata_id": "P551",
+        "wikidata_name": "residence",
+        "wikidata_description": "the place where the person is or has been, resident"
+    },
+    {
+        "freebase_name": "/people/person/profession",
+        "wikidata_id": "P106",
+        "wikidata_name": "occupation",
+        "wikidata_description": "occupation of a person"
+    },
+    {
+        "freebase_name": "/people/deceased_person/place_of_death",
+        "wikidata_id": "P20",
+        "wikidata_name": "place of death",
+        "wikidata_description": "most specific known (e.g. city instead of country, or hospital instead of city) death location of a person, animal or fictional character"
+    },
+    {
+        "freebase_name": "/location/country/capital",
+        "wikidata_id": "P36",
+        "wikidata_name": "capital",
+        "wikidata_description": "seat of government of a country, province, state or other type of administrative territorial entity"
+    },
+    {
+        "freebase_name": "/business/company/advisors",
+        "note": "Nope."
+    },
+    {
+        "freebase_name": "/business/company_shareholder/major_shareholder_of",
+        "note": "Nope."
+    },
+    {
+        "freebase_name": "/business/company/industry",
+        "wikidata_id": "P452",
+        "wikidata_name": "industry",
+        "wikidata_description": "specific industry of company or organization"
+    },
+    {
+        "freebase_name": "/business/company/major_shareholders",
+        "note": "Nope."
+    },
+    {
+        "freebase_name": "/people/person/children",
+        "wikidata_id": "P40",
+        "wikidata_name": "child",
+        "wikidata_description": "subject has object as child"
+    }
+]

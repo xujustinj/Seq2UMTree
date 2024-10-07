@@ -1,0 +1,100 @@
+{
+    "relations": [
+        {
+            "name": "/business/company_shareholder/major_shareholder_of",
+            "description": "This relation identifies individuals or entities that hold a significant percentage of shares in a company."
+        },
+        {
+            "name": "/business/company/advisors",
+            "description": "This relation connects a company to its advisory board members or consultants who provide strategic guidance."
+        },
+        {
+            "name": "/business/company/founders",
+            "description": "This relation denotes the individuals who established or co-founded a company."
+        },
+        {
+            "name": "/business/company/industry",
+            "description": "This relation categorizes a company based on the sector or field in which it operates."
+        },
+        {
+            "name": "/business/company/major_shareholders",
+            "description": "This relation lists all significant shareholders of a company, highlighting their ownership stakes."
+        },
+        {
+            "name": "/business/company/place_founded",
+            "description": "This relation specifies the geographical location where a company was established."
+        },
+        {
+            "name": "/business/person/company",
+            "description": "This relation links individuals to the companies they are associated with, whether as employees, owners, or executives."
+        },
+        {
+            "name": "/location/administrative_division/country",
+            "description": "This relation connects administrative divisions, such as states or provinces, to their respective countries."
+        },
+        {
+            "name": "/location/country/administrative_divisions",
+            "description": "This relation outlines the various administrative divisions within a specific country."
+        },
+        {
+            "name": "/location/country/capital",
+            "description": "This relation identifies the capital city of a given country."
+        },
+        {
+            "name": "/location/location/contains",
+            "description": "This relation indicates that one geographical location encompasses another, such as a city within a state."
+        },
+        {
+            "name": "/location/neighborhood/neighborhood_of",
+            "description": "This relation describes the association between neighborhoods and the larger areas they belong to."
+        },
+        {
+            "name": "/people/deceased_person/place_of_death",
+            "description": "This relation specifies the location where an individual passed away."
+        },
+        {
+            "name": "/people/ethnicity/geographic_distribution",
+            "description": "This relation illustrates how an ethnicity is spread across different geographical regions."
+        },
+        {
+            "name": "/people/ethnicity/people",
+            "description": "This relation connects specific individuals to their respective ethnic backgrounds."
+        },
+        {
+            "name": "/people/person/children",
+            "description": "This relation links individuals to their offspring or children."
+        },
+        {
+            "name": "/people/person/ethnicity",
+            "description": "This relation identifies the ethnic background of an individual."
+        },
+        {
+            "name": "/people/person/nationality",
+            "description": "This relation denotes the nationality or citizenship of an individual."
+        },
+        {
+            "name": "/people/person/place_lived",
+            "description": "This relation specifies locations where an individual has resided throughout their life."
+        },
+        {
+            "name": "/people/person/place_of_birth",
+            "description": "This relation indicates the location where an individual was born."
+        },
+        {
+            "name": "/people/person/profession",
+            "description": "This relation connects individuals to their respective professions or occupations."
+        },
+        {
+            "name": "/people/person/religion",
+            "description": "This relation identifies the religious beliefs or affiliations of an individual."
+        },
+        {
+            "name": "/sports/sports_team_location/teams",
+            "description": "This relation associates sports teams with their respective locations or cities."
+        },
+        {
+            "name": "/sports/sports_team/location",
+            "description": "This relation specifies the geographical location where a sports team is based."
+        }
+    ]
+}
