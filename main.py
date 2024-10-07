@@ -93,19 +93,6 @@ class Runner:
             print(model)
             print(parameter_num)
 
-        elif mode == "subevaluation":
-            model = self._get_model()
-            self.load_model(model, "best")
-            for split in self.config.subsets:
-                loader = self._get_dataloader(
-                    split=split,
-                    batch_size=self.config.batch_size_eval,
-                    num_workers=8,
-                )
-                f1, log = self.evaluation(model=model, loader=loader)
-                print(log)
-                print("f1 = ", f1)
-
         elif mode == "debug":
             loader = self._get_dataloader(
                 split=self.config.dev,
@@ -226,7 +213,7 @@ if __name__ == "__main__":
         "-m",
         type=str,
         default="train",
-        help="preprocessing|train|evaluation|subevaluation|model_summary",
+        help="preprocessing|train|evaluation|model_summary",
     )
     args = parser.parse_args()
 

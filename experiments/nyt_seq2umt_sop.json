@@ -1,15 +1,15 @@
 {
-    "dataset": "nyt",
+    "dataset": "NYT-CopyRE",
     "model": "seq2umt",
-    "data_root": "data/nyt/seq2umt_sop",
-    "raw_data_root": "raw_data/nyt",
-    "train": "new_train_data.json",
-    "dev": "new_validate_data.json",
-    "test": "new_test_data.json",
+    "data_root": "data/NYT-CopyRE/seq2umt_sop",
+    "raw_data_root": "raw_data/NYT-CopyRE",
+    "train": "train.jsonl",
+    "dev": "validation.jsonl",
+    "test": "test.jsonl",
     "raw_data_list": [
-        "new_test_data.json",
-        "new_train_data.json",
-        "new_validate_data.json"
+        "train.jsonl",
+        "validation.jsonl",
+        "test.jsonl"
     ],
     "relation_vocab": "relation_vocab.json",
     "max_text_len": 1000,

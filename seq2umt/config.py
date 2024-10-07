@@ -19,7 +19,6 @@ class Seq2UMTreeConfig:
         self.train: str
         self.dev: str
         self.test: str
-        self.subsets: list[str]
         self.raw_data_list: list[str]
 
         self.relation_vocab: str
