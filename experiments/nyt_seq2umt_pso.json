@@ -3,6 +3,7 @@
     "model": "seq2umt",
     "data_root": "data/NYT-CopyRE/seq2umt_pso",
     "raw_data_root": "raw_data/NYT-CopyRE",
+    "schema": "schema_perplexity.json",
     "train": "train.jsonl",
     "dev": "validation.jsonl",
     "test": "test.jsonl",

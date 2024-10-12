@@ -13,7 +13,7 @@ from seq2umt.data import Seq2UMTreeData, Seq2UMTreeDataset, Seq2UMTreeDataLoader
 from seq2umt.config import Seq2UMTreeConfig
 from seq2umt.models import Seq2UMTree
 from seq2umt.preprocess import Seq2UMTreePreprocessor
-from seq2umt.types import OptimizerName
+from seq2umt.types import OptimizerName, SplitName
 
 from util.device import get_device
 
@@ -35,11 +35,11 @@ class Runner:
 
     def _get_dataloader(
             self,
-            split: str,
+            split: SplitName,
             batch_size: Optional[int] = 1,
             num_workers: int = 0,
             shuffle: Optional[bool] = None,
-    ) -> Seq2UMTreeDataLoader:
+    ) -> tuple[Seq2UMTreeDataset, Seq2UMTreeDataLoader]:
         dataset = Seq2UMTreeDataset(config=self.config, dataset=split)
         dataloader = Seq2UMTreeDataLoader(
             dataset=dataset,
@@ -47,7 +47,7 @@ class Runner:
             num_workers=num_workers,
             shuffle=shuffle,
         )
-        return dataloader
+        return dataset, dataloader
 
     def _get_optimizer(self, model: Seq2UMTree) -> Optimizer:
         name: OptimizerName = self.config.optimizer
@@ -66,6 +66,7 @@ class Runner:
         preprocessor.gen_relation_vocab()
         preprocessor.gen_all_data()
         preprocessor.gen_vocab(min_freq=2)
+        preprocessor.gen_schema()
 
     def run(self, mode: str):
         if mode == "preprocessing":
@@ -77,12 +78,12 @@ class Runner:
         elif mode == "evaluation":
             model = self._get_model()
             self.load_model(model, "best")
-            loader = self._get_dataloader(
+            dataset, loader = self._get_dataloader(
                 split=self.config.test,
                 batch_size=self.config.batch_size_eval,
                 num_workers=8,
             )
-            f1, log = self.evaluation(model=model, loader=loader)
+            f1, log = self.evaluation(model=model, dataset=dataset, loader=loader)
             print(log)
             print("f1 = ", f1)
 
@@ -117,15 +118,16 @@ class Runner:
             os.mkdir(self.model_dir)
         torch.save(model.state_dict(), self.model_path(name))
 
-    def evaluation(self, model: Seq2UMTree, loader: Seq2UMTreeDataLoader) -> tuple[float, str]:
+    def evaluation(self, model: Seq2UMTree, dataset: Seq2UMTreeDataset, loader: Seq2UMTreeDataLoader) -> tuple[float, str]:
         model.metrics.reset()
         model.eval()
 
+        schema_data = dataset.get_schema().to(device=self.device)
         with torch.no_grad():
             for sample in tqdm(loader):
                 assert isinstance(sample, Seq2UMTreeData)
                 sample = sample.to(device=self.device)
-                output = model(sample)
+                output = model(sample, schema_data)
                 model.run_metrics(output)
 
         result = model.get_metric()
@@ -143,18 +145,18 @@ class Runner:
     def train(self):
         model = self._get_model()
         optimizer = self._get_optimizer(model)
-        train_loader = self._get_dataloader(
+        train_dataset, train_loader = self._get_dataloader(
             split=self.config.train,
             batch_size=self.config.batch_size_train,
             num_workers=8,
             shuffle=True,
         )
-        dev_loader = self._get_dataloader(
+        dev_dataset, dev_loader = self._get_dataloader(
             split=self.config.dev,
             batch_size=self.config.batch_size_eval,
             num_workers=4,
         )
-        test_loader = self._get_dataloader(
+        test_dataset, test_loader = self._get_dataloader(
             split=self.config.test,
             batch_size=self.config.batch_size_eval,
             num_workers=4,
@@ -162,6 +164,7 @@ class Runner:
         score = -float("inf")
         best_epoch = -1
         num_epochs = self.config.epoch_num
+        schema_data = train_dataset.get_schema().to(device=self.device)
         for epoch in range(1, 1+num_epochs):
             model.train()
             pbar = tqdm(train_loader)
@@ -171,7 +174,7 @@ class Runner:
 
                 optimizer.zero_grad()
                 sample = sample.to(device=self.device)
-                output = model(sample)
+                output = model(sample, schema_data)
 
                 loss = output["loss"]
                 assert isinstance(loss, torch.Tensor)
@@ -184,7 +187,7 @@ class Runner:
 
             self.save_model(model, name=epoch)
 
-            new_score, log = self.evaluation(model=model, loader=dev_loader)
+            new_score, log = self.evaluation(model=model, dataset=dev_dataset, loader=dev_loader)
             logging.info(log)
             if new_score >= score:
                 score = new_score
@@ -192,7 +195,7 @@ class Runner:
                 self.save_model(model, name="best")
         logging.info(f"best epoch: {best_epoch}\tvalidation F1 = {score:.3f}")
         self.load_model(model, name="best")
-        new_score, log = self.evaluation(model=model, loader=test_loader)
+        new_score, log = self.evaluation(model=model, dataset=test_dataset, loader=test_loader)
         logging.info(log)
 
 

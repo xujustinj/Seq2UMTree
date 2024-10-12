@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Optional
 
 import numpy as np
@@ -9,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 from util.type import assert_type
 from util.tensors import seq_padding
 from .config import Seq2UMTreeConfig
-from .types import ComponentName
+from .types import ComponentName, SplitName
 
 
 def sort_all(batch, lens):
@@ -17,6 +16,31 @@ def sort_all(batch, lens):
     unsorted_all = [lens] + [range(len(lens))] + list(batch)
     sorted_all = [list(t) for t in zip(*sorted(zip(*unsorted_all), reverse=True))]
     return sorted_all[2:], sorted_all[1]
+
+
+class SchemaData:
+    def __init__(self, descriptions: list[list[int]]):
+        self.device = torch.device("cpu")
+
+        ordered = sorted(
+            ((len(desc), i, desc) for i, desc in enumerate(descriptions)),
+            reverse=True,
+        )
+        self.tokens = torch.tensor(seq_padding([desc for _, _, desc in ordered])).long()
+        self.length = torch.tensor([l for l, _, _ in ordered]).long()
+        self.orig_idx = [i for _, i, _ in ordered]
+
+    def pin_memory(self):
+        self.tokens = self.tokens.pin_memory()
+
+        return self
+
+    def to(self, device: torch.device):
+        self.tokens = self.tokens.to(device=device)
+        # length stays on CPU
+
+        self.device = device
+        return self
 
 
 class Seq2UMTreeData:
@@ -80,6 +104,8 @@ class Seq2UMTreeData:
         self.O_K1_in = self.O_K1_in.to(device=device)
         self.O_K2_in = self.O_K2_in.to(device=device)
 
+        # length stays on CPU
+
         self.device = device
         return self
 
@@ -100,9 +126,9 @@ class Seq2UMTreeDataset(Dataset[tuple[
     int,
     list[dict[ComponentName, str]],
 ]]):
-    def __init__(self, config: Seq2UMTreeConfig, dataset: str):
+    def __init__(self, config: Seq2UMTreeConfig, split: SplitName):
         self.config = config
-        self.data_root = config.data_root
+        self.data_path, self.schema_path = config.get_paths(split)
 
         self.word_vocab = config.word2id
         self.relation_vocab = config.rel2id
@@ -126,7 +152,7 @@ class Seq2UMTreeDataset(Dataset[tuple[
 
         oov_token = self.word_vocab["<oov>"]
 
-        with open(os.path.join(self.data_root, dataset), "r", encoding="utf-8") as f:
+        with open(self.data_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip("\n")
                 instance = assert_type(json.loads(line), dict)
@@ -222,6 +248,21 @@ class Seq2UMTreeDataset(Dataset[tuple[
 
     def __len__(self) -> int:
         return len(self.text_list)
+
+    def get_schema(self) -> SchemaData:
+        oov_token = self.word_vocab["<oov>"]
+
+        with open(self.schema_path) as f:
+            rel2desc = json.load(f)
+        descriptions = [
+            rel2desc[self.config.id2rel[i]]
+            for i in range(len(self.config.id2rel))
+        ]
+        tokenized_descriptions = [
+            [self.word_vocab.get(c, oov_token) for c in self.config.tokenizer(desc)]
+            for desc in descriptions
+        ]
+        return SchemaData(descriptions=tokenized_descriptions)
 
 
 class Seq2UMTreeDataLoader(DataLoader[Seq2UMTreeData]):

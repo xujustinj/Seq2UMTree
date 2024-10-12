@@ -1,15 +1,14 @@
+from typing import Optional
+
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch import nn, Tensor
 
-
-class Attention(nn.Module):
+class CrossAttention(nn.Module):
     r"""
-
     Applies an attention mechanism on the output features from the decoder.
 
     https://github.com/IBM/pytorch-seq2seq/blob/master/seq2seq/models/attention.py
-    
+
     .. math::
             \begin{array}{ll}
             x = context*output \\
@@ -18,55 +17,51 @@ class Attention(nn.Module):
             \end{array}
     Args:
         dim(int): The number of expected features in the output
-    Inputs: output, context
-        - **output** (batch, output_len, dimensions): tensor containing the output features from the decoder.
-        - **context** (batch, input_len, dimensions): tensor containing features of the encoded input sequence.
+    Inputs:
+        - **q** (batch, output_len, dimensions): tensor containing the output features from the decoder.
+        - **kv** (batch, input_len, dimensions): tensor containing features of the encoded input sequence.
     Outputs: output, attn
-        - **output** (batch, output_len, dimensions): tensor containing the attended output features from the decoder.
-        - **attn** (batch, output_len, input_len): tensor containing attention weights.
+        - **o** (batch, output_len, dimensions): tensor containing the attended output features from the decoder.
+        - **attn_logits** (batch, output_len, input_len): tensor containing attention logits.
     Attributes:
-        linear_out (torch.nn.Linear): applies a linear transformation to the incoming data: :math:`y = Ax + b`.
-        mask (torch.Tensor, optional): applies a :math:`-inf` to the indices specified in the `Tensor`.
-    Examples::
-        >>> attention = seq2seq.models.Attention(256)
-        >>> context = Variable(torch.randn(5, 3, 256))
-        >>> output = Variable(torch.randn(5, 5, 256))
-        >>> output, attn = attention(output, context)
+        linear_out (torch.nn.Linear): applies a linear transformation to the outgoing data
     """
 
-    def __init__(self, dim):
-        super(Attention, self).__init__()
-        self.linear_out = nn.Linear(dim * 2, dim)
-        self.mask = None
+    def __init__(self, dim: int):
+        super(CrossAttention, self).__init__()
 
-    def set_mask(self, mask):
-        """
-        Sets indices to be masked
-        Args:
-            mask (torch.Tensor): tensor containing indices to be masked
-        """
-        self.mask = mask
+        self.softmax = nn.Softmax(dim=-1)
 
-    def forward(self, output, context):
-        batch_size = output.size(0)
-        hidden_size = output.size(2)
-        input_size = context.size(1)
-        # (batch, out_len, dim) * (batch, in_len, dim) -> (batch, out_len, in_len)
-        attn = torch.bmm(output, context.transpose(1, 2))
-        if self.mask is not None:
-            attn.data.masked_fill_(self.mask, -float("inf"))
-        attn = F.softmax(attn.view(-1, input_size), dim=1).view(
-            batch_size, -1, input_size
+        self.linear_out = nn.Sequential(
+            nn.Linear(in_features=dim*2, out_features=dim),
+            nn.Tanh(),
         )
 
-        # (batch, out_len, in_len) * (batch, in_len, dim) -> (batch, out_len, dim)
-        mix = torch.bmm(attn, context)
+    def forward(
+            self,
+            q: Tensor,
+            kv: Tensor,
+            mask: Optional[Tensor] = None,
+    ) -> tuple[Tensor, Tensor]:
+        B, Q, H = q.shape
+        _, KV, _ = kv.shape
+        assert kv.shape == (B, KV, H)
 
-        # concat -> (batch, out_len, 2*dim)
-        combined = torch.cat((mix, output), dim=2)
-        # output -> (batch, out_len, dim)
-        output = torch.tanh(self.linear_out(combined.view(-1, 2 * hidden_size))).view(
-            batch_size, -1, hidden_size
-        )
+        attn_logits = torch.bmm(q, kv.transpose(1, 2))
+        assert attn_logits.shape == (B, Q, KV)
+        if mask is not None:
+            assert mask.shape == (B, Q, KV)
+            attn_logits.data.masked_fill_(mask, -float("inf"))
+        weights = self.softmax(attn_logits)
 
-        return output, attn
+        mix = torch.bmm(weights, kv)
+        assert mix.shape == (B, Q, H)
+
+        combined = torch.cat((mix, q), dim=-1)
+        assert combined.shape == (B, Q, H+H)
+
+        output = self.linear_out(combined)
+        assert isinstance(output, Tensor)
+        assert output.shape == (B, Q, H)
+
+        return output, attn_logits

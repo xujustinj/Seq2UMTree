@@ -11,3 +11,9 @@ ComponentName = Literal[
     "predicate",
     "object",
 ]
+
+SplitName = Literal[
+    "train",
+    "validation",
+    "test",
+]

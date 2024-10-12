@@ -6,7 +6,7 @@ from typing import Optional
 
 import torch
 
-from .types import ComponentName, OptimizerName
+from .types import ComponentName, OptimizerName, SplitName
 
 
 @dataclass
@@ -17,8 +17,11 @@ class Seq2UMTreeConfig:
         self.data_root: str
         self.raw_data_root: str
         self.train: str
-        self.dev: str
+        self.validation: str
         self.test: str
+        self.train_schema: str
+        self.validation_schema: str
+        self.test_schema: str
         self.raw_data_list: list[str]
 
         self.relation_vocab: str
@@ -84,6 +87,17 @@ class Seq2UMTreeConfig:
     def id2rel(self) -> dict[int, str]:
         return {k: v for v, k in self.rel2id.items()}
 
+    @property
+    def schema_path(self) -> str:
+        return os.path.join(self.data_root, "schema.json")
+
+    @cached_property
+    def rel2desc(self) -> dict[str, str]:
+        with open(self.schema_path, "r", encoding="utf-8") as f:
+            rel2desc = json.load(f)
+        assert isinstance(rel2desc, dict)
+        return rel2desc
+
     def join(self, toks: list[str]) -> str:
         if self.seperator == "":
             return "".join(toks)
@@ -99,3 +113,21 @@ class Seq2UMTreeConfig:
             return text.split(" ")
         else:
             raise NotImplementedError("other tokenizer?")
+
+    def get_paths(self, split: SplitName) -> tuple[str, str]:
+        match split:
+            case "train":
+                data_filename = self.train
+                schema_filename = self.train_schema
+            case "validation":
+                data_filename = self.validation
+                schema_filename = self.validation_schema
+            case "test":
+                data_filename = self.test
+                schema_filename = self.test_schema
+            case _:
+                raise ValueError(split)
+        return (
+            os.path.join(self.data_root, data_filename),
+            os.path.join(self.data_root, schema_filename),
+        )

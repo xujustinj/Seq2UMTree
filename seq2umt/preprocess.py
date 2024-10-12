@@ -282,9 +282,8 @@ class Seq2UMTreePreprocessor:
             rel_set.update(t["predicate"] for t in spo_list)
 
         relation_vocab = {k: v for v, k in enumerate(rel_set)}
-        relation_vocab[NO_RELATION] = len(relation_vocab)
         with open(self.config.relation_vocab_path, "w", encoding="utf-8") as f:
-            json.dump(relation_vocab, f, ensure_ascii=False)
+            json.dump(relation_vocab, f, ensure_ascii=False, indent=4)
 
     def yield_key(self, source: str, key: str):
         with open(source, "r", encoding="utf-8") as s:
@@ -295,3 +294,14 @@ class Seq2UMTreePreprocessor:
                 instance = json.loads(line)
                 value = instance[key]
                 yield value
+
+    def gen_schema(self):
+        source = os.path.join(self.raw_data_root, self.config.schema)
+        with open(source, "r", encoding="utf=8") as s:
+            raw_schema = json.load(s)
+        assert isinstance(raw_schema, dict)
+        schema: dict[str, str] = {
+            r["name"]: r["description"] for r in raw_schema["relations"]
+        }
+        with open(self.config.schema_path, "w", encoding="utf-8") as f:
+            json.dump(schema, f, ensure_ascii=False, indent=4)
