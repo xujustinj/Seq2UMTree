@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 DATA_DIR='raw_data/redocred/data'
 GITHUB_URL='https://raw.githubusercontent.com/tonytan48/Re-DocRED/d62d5ad95850d26ab737eaf7a92448ebff68c816'
 

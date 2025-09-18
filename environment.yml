@@ -1,11 +1,11 @@
 name: OpenJERE
 channels:
-  - cerebis
-  - pytorch
   - anaconda
   - conda-forge
+  - pytorch
 dependencies:
   - python=3.8
+  - dataclasses-json
   - matplotlib-base
   - numpy
   - overrides
